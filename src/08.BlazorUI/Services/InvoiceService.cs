@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using MyApp.BlazorUI.Models;
 
 namespace MyApp.BlazorUI.Services
@@ -7,31 +8,38 @@ namespace MyApp.BlazorUI.Services
     public class InvoiceService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl = "http://localhost:5099/api"; // ✅ Base URL untuk API
 
         public InvoiceService(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
 
-        // ✅ Ambil semua invoice dari endpoint utama
-        public async Task<List<InvoiceItem>> GetInvoicesAsync(string token)
+        // Ambil semua invoice — optional token parameter
+        public async Task<List<InvoiceItem>> GetInvoicesAsync(string? token = null)
         {
             try
             {
-                _httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", token);
+                using var request = new HttpRequestMessage(HttpMethod.Get, "api/Invoices?pageNumber=1&pageSize=10");
+                if (!string.IsNullOrWhiteSpace(token))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                // Gunakan base URL biar lebih rapi
-                var response = await _httpClient.GetAsync($"{_baseUrl}/Invoices?pageNumber=1&pageSize=10");
+                var response = await _httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
 
-                // Deserialize sesuai struktur JSON backend (data → items)
-                var result = await response.Content.ReadFromJsonAsync<InvoiceResponse>();
-                var invoices = result?.Data?.Items ?? new List<InvoiceItem>();
+                // Debug JSON
+                var json = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"🧾 Invoice JSON Response: {json}");
 
-                // Tidak perlu ambil email lagi, karena sudah dikirim dari backend
-                return invoices;
+                // Deserialize menggunakan model InvoiceResponse → Data → Items
+                var wrapped = System.Text.Json.JsonSerializer.Deserialize<InvoiceResponse>(
+                    json,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }
+                );
+
+                return wrapped?.Data?.Items ?? new List<InvoiceItem>();
             }
             catch (Exception ex)
             {
@@ -40,26 +48,29 @@ namespace MyApp.BlazorUI.Services
             }
         }
 
-        // ✅ Ambil total invoice
-        public async Task<int> GetTotalInvoicesAsync(string token)
-        {
-            var invoices = await GetInvoicesAsync(token);
-            return invoices.Count;
-        }
 
-        // ✅ Ambil detail invoice
-        public async Task<InvoiceDetailModel?> GetInvoiceDetailAsync(int invoiceId, string token)
+        // Ambil detail invoice — optional token parameter
+        public async Task<InvoiceDetailModel?> GetInvoiceDetailAsync(int invoiceId, string? token = null)
         {
             try
             {
-                _httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", token);
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"api/Invoices/{invoiceId}");
 
-                var response = await _httpClient.GetAsync($"{_baseUrl}/Invoices/{invoiceId}");
+                if (!string.IsNullOrWhiteSpace(token))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await _httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
 
-                var result = await response.Content.ReadFromJsonAsync<InvoiceDetailModel>();
-                return result;
+                var json = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"🧾 Invoice Detail JSON Response: {json}");
+
+                var result = JsonSerializer.Deserialize<ApiResponse<InvoiceDetailModel>>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                return result?.Data;
             }
             catch (Exception ex)
             {

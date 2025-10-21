@@ -13,23 +13,23 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddMudServices();
 
-// ✅ HttpClient didefinisikan sebelum build()
+// ✅ HttpClient default (backup)
 builder.Services.AddScoped(sp => new HttpClient
 {
   BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]!)
 });
 
+// Register local services
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<PaymentService>();
-builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<InvoiceService>();
-
+builder.Services.AddScoped<DashboardService>();
 
 // Blazored LocalStorage (for token storage)
 builder.Services.AddBlazoredLocalStorage();
 
 // Authentication & Authorization
-builder.Services.AddAuthentication("Identity.Application")  // 🔹 Needed for [Authorize]
+builder.Services.AddAuthentication("Identity.Application")
     .AddCookie("Identity.Application", options =>
     {
       options.LoginPath = "/login";
@@ -39,23 +39,35 @@ builder.Services.AddAuthentication("Identity.Application")  // 🔹 Needed for [
 
 builder.Services.AddAuthorizationCore(options =>
 {
-  // Set fallback policy to not require authentication for HTTP pipeline
-  options.FallbackPolicy = null;
+  options.FallbackPolicy = null; // tidak wajib auth di semua halaman
 });
 
 builder.Services.AddCascadingAuthenticationState();
 
-// Register the AuthTokenHandler
-builder.Services.AddScoped<AuthTokenHandler>();
+// Register AuthTokenHandler
+builder.Services.AddTransient<AuthTokenHandler>();
 
-// Register HttpClient for AuthClient + attach AuthTokenHandler
+// ✅ HttpClient untuk AuthClient (pakai token)
 builder.Services.AddHttpClient<IAuthClient, AuthClient>(client =>
 {
-  // Make sure this URL matches your backend API base
   client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
       ?? "http://localhost:5099/");
 })
 .AddHttpMessageHandler<AuthTokenHandler>();
+
+// ✅ HttpClient untuk InvoiceService (butuh token)
+builder.Services.AddHttpClient<InvoiceService>(client =>
+{
+  client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+      ?? "http://localhost:5099/");
+});
+
+// 🚫 DashboardService tidak perlu token
+builder.Services.AddHttpClient<DashboardService>(client =>
+{
+  client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]
+      ?? "http://localhost:5099/");
+});
 
 // Register other services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -73,12 +85,15 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// ✅ Pastikan wwwroot bisa diakses
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode(); // 🔹 Hapus opsi Prerender, biarkan default
 
 app.Run();

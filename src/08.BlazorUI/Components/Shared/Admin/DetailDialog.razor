@@ -1,3 +1,5 @@
+@using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components.Authorization
 @using MyApp.BlazorUI.Services
 @using MyApp.BlazorUI.Models
 @inject InvoiceService InvoiceService
@@ -52,16 +54,19 @@
 </MudDialog>
 
 @code {
-  [Parameter]
-  public string Token { get; set; } = string.Empty;
   [Parameter] public int InvoiceId { get; set; }
-  [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+  [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+  [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+  [Inject] private ILocalStorageService LocalStorage { get; set; } = default!;
 
   private bool _loading;
   private InvoiceDetailModel? Invoice;
   private List<CourseItem> InvoiceItems = new();
 
-  protected override async Task OnInitializedAsync() => await LoadInvoiceAsync();
+  protected override async Task OnInitializedAsync()
+  {
+    await LoadInvoiceAsync();
+  }
 
   private async Task LoadInvoiceAsync()
   {
@@ -69,13 +74,19 @@
 
     try
     {
-      // Token sementara
-      var token =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJhZG1pbkBlbWFpbC5jb20iLCJuYW1lIjoiQWRtaW4iLCJzdGF0dXMiOiJBY3RpdmUiLCJqdGkiOiI4NmM2ODBmMC1lY2E1LTQzMmMtYjJkNi1iYmY2N2Q5ZTMxOWMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImV4cCI6MTc2MDk0NjIzNCwiaXNzIjoiTXlBcHAiLCJhdWQiOiJNeUFwcFVzZXJzIn0.xkIk73GPvcobuxSxGtH1ua4zScbEQjLTjr821SHS-kY";
+      // ✅ Ambil token dari local storage
+      var token = await LocalStorage.GetItemAsStringAsync("authToken");
+      if (string.IsNullOrEmpty(token))
+      {
+        Snackbar.Add("⚠️ Token tidak ditemukan, silakan login kembali.", Severity.Warning);
+        _loading = false;
+        return;
+      }
 
-      Invoice = await InvoiceService.GetInvoiceDetailAsync(InvoiceId, token);
+      // ✅ Gunakan token yang valid
+      Invoice = await InvoiceService.GetInvoiceDetailAsync(InvoiceId);
 
-      // Jika backend belum ada data Courses → buat dummy list kosong supaya tidak error
+
       if (Invoice?.Courses == null)
         Invoice!.Courses = new List<InvoiceCourseModel>();
 
@@ -93,7 +104,7 @@
     }
     catch (Exception ex)
     {
-      Snackbar.Add($"Error loading invoice: {ex.Message}", Severity.Error);
+      Snackbar.Add($"❌ Error loading invoice: {ex.Message}", Severity.Error);
     }
 
     _loading = false;

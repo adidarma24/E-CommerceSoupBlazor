@@ -1,6 +1,4 @@
-using System.Net.Http;
 using System.Net.Http.Json;
-using Microsoft.Extensions.Configuration;
 using MyApp.BlazorUI.Components.Models;
 
 namespace MyApp.BlazorUI.Services
@@ -8,15 +6,13 @@ namespace MyApp.BlazorUI.Services
     public class DashboardService
     {
         private readonly HttpClient _httpClient;
-        private readonly IConfiguration _config;
 
-        public DashboardService(HttpClient httpClient, IConfiguration config)
+        public DashboardService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _config = config;
+            Console.WriteLine("📊 DashboardService initialized (no token needed).");
         }
 
-        // ==== STRUCTURE UNTUK RESPONSE API ====
         private class ApiResponse<T>
         {
             public bool Success { get; set; }
@@ -32,22 +28,15 @@ namespace MyApp.BlazorUI.Services
             public List<UserModel> Users { get; set; } = new();
         }
 
-        // ==== METHOD UNTUK DASHBOARD ====
-
-        /// <summary>
-        /// Mengambil total user aktif dari API Users
-        /// </summary>
         public async Task<int> GetTotalActiveUsersAsync()
         {
             try
             {
-                var baseUrl = _config["ApiBaseUrl"];
-                var response = await _httpClient.GetFromJsonAsync<ApiResponse<UserData>>($"{baseUrl}/users?page=1&pageSize=100");
+                var response = await _httpClient.GetFromJsonAsync<ApiResponse<UserData>>("api/users?page=1&pageSize=100");
 
                 if (response?.Data?.Users == null)
                     return 0;
 
-                // Asumsi status 0 = aktif
                 return response.Data.Users.Count(u => u.Status == UserStatus.Active || u.Status == 0);
             }
             catch (Exception ex)
@@ -57,20 +46,15 @@ namespace MyApp.BlazorUI.Services
             }
         }
 
-        /// <summary>
-        /// Mengambil total seluruh member (active + inactive)
-        /// </summary>
         public async Task<int> GetTotalMembersAsync()
         {
             try
             {
-                var baseUrl = _config["ApiBaseUrl"];
-                var response = await _httpClient.GetFromJsonAsync<ApiResponse<UserData>>($"{baseUrl}/users?page=1&pageSize=100");
+                var response = await _httpClient.GetFromJsonAsync<ApiResponse<UserData>>("api/users?page=1&pageSize=100");
 
                 if (response?.Data?.Users == null)
                     return 0;
 
-                // Menghitung semua user (baik aktif maupun tidak)
                 return response.Data.Users.Count;
             }
             catch (Exception ex)
@@ -79,5 +63,7 @@ namespace MyApp.BlazorUI.Services
                 return 0;
             }
         }
+
+
     }
 }
