@@ -52,7 +52,7 @@ namespace MyApp.WebAPI.Controllers
 
         // ✅ CREATE
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] PaymentMethodCreateDto dto)
+        public async Task<IActionResult> Create([FromForm] PaymentMethodCreateDto dto)
         {
             try
             {
@@ -86,7 +86,7 @@ namespace MyApp.WebAPI.Controllers
 
         // ✅ UPDATE
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] PaymentMethodUpdateDto dto)
+        public async Task<IActionResult> Update(int id, [FromForm] PaymentMethodUpdateDto dto)
         {
             try
             {

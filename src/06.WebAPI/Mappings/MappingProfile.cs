@@ -20,9 +20,6 @@ namespace MyApp.WebAPI.Mappings
                 .ForMember(dest => dest.ScheduleDate, opt => opt.MapFrom(src => src.MenuCourseSchedule.Schedule.ScheduleDate))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.MenuCourseSchedule.MenuCourse.Price));
 
-      // === Pemetaan untuk Category (READ, CREATE, UPDATE) ===
-
-
       // === Pemetaan untuk MenuCourse (READ, CREATE, UPDATE) ===
       CreateMap<MenuCourse, MenuCourseDto>()
           .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.MenuCourseId))

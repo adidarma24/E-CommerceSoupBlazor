@@ -56,7 +56,7 @@ namespace MyApp.WebAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateScheduleDto updateDto)
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateScheduleDto updateDto)
         {
             var updatedSchedule = await _scheduleService.UpdateAsync(id, updateDto); 
             if (updatedSchedule == null)

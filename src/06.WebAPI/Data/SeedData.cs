@@ -73,15 +73,24 @@ namespace MyApp.WebAPI.Data
       if (!context.Categories.Any())
       {
         context.Categories.AddRange(
-            new Category { Name = "Asian", Image = "asian.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Western", Image = "western.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+            new Category { Name = "Asian", Image = "Uploads/asian.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Cold Drink", Image = "Uploads/cold_drink.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Cookies", Image = "Uploads/cookies1.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Desert", Image = "Uploads/desert.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Eastern", Image = "Uploads/eastern.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Hot Drink", Image = "Uploads/hot_drink.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Junkfood", Image = "Uploads/junkfood.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Western", Image = "Uploads/western.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
       }
 
       // Ambil ID Category setelah disimpan
-      var asianCategory = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Asian");
-      var westernCategory = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Western");
+      var asianCategory = await context.Categories.FirstAsync(c => c.Name == "Asian");
+      var coldDrinkCategory = await context.Categories.FirstAsync(c => c.Name == "Cold Drink");
+      var cookiesCategory = await context.Categories.FirstAsync(c => c.Name == "Cookies");
+      var dessertCategory = await context.Categories.FirstAsync(c => c.Name == "Desert");
+      var westernCategory = await context.Categories.FirstAsync(c => c.Name == "Western");
 
       // === SEED MENU COURSE ===
       if (!context.MenuCourses.Any())
@@ -89,21 +98,61 @@ namespace MyApp.WebAPI.Data
         context.MenuCourses.AddRange(
             new MenuCourse
             {
-              Name = "Tomyum",
-              Image = "tomyum.svg",
-              Price = 100000,
-              Description = "tomyum",
-              CategoryId = asianCategory!.CategoryId,
+              Name = "Tom Yum Thailand",
+              Image = "Uploads/tomyum.svg",
+              Price = 450000,
+              Description = "Tom Yum Thailand",
+              CategoryId = asianCategory.CategoryId,
               CreatedAt = DateTime.UtcNow,
               UpdatedAt = DateTime.UtcNow
             },
             new MenuCourse
             {
-              Name = "Pizza",
-              Image = "pizza.svg",
+              Name = "Strawberry Float",
+              Image = "Uploads/trawberry.svg",
               Price = 150000,
-              Description = "Learn design principles",
-              CategoryId = westernCategory!.CategoryId,
+              Description = "Minuman strawberry float",
+              CategoryId = coldDrinkCategory.CategoryId,
+              CreatedAt = DateTime.UtcNow,
+              UpdatedAt = DateTime.UtcNow
+            },
+            new MenuCourse
+            {
+              Name = "Chocholate Cookies",
+              Image = "Uploads/cookies.svg",
+              Price = 200000,
+              Description = "Kue Coklat",
+              CategoryId = cookiesCategory.CategoryId,
+              CreatedAt = DateTime.UtcNow,
+              UpdatedAt = DateTime.UtcNow
+            },
+            new MenuCourse
+            {
+              Name = "Green Tea Cheesecake",
+              Image = "Uploads/greentea.svg",
+              Price = 400000,
+              Description = "Kue keju green tea",
+              CategoryId = dessertCategory.CategoryId,
+              CreatedAt = DateTime.UtcNow,
+              UpdatedAt = DateTime.UtcNow
+            },
+             new MenuCourse
+            {
+              Name = "Soto Banjar Limau Kuit",
+              Image = "Uploads/soto.svg",
+              Price = 150000,
+              Description = "Soto khas Banjar",
+              CategoryId = asianCategory.CategoryId,
+              CreatedAt = DateTime.UtcNow,
+              UpdatedAt = DateTime.UtcNow
+            },
+            new MenuCourse
+            {
+              Name = "Italian Spaghetti Bolognese",
+              Image = "Uploads/spaghetti.svg",
+              Price = 450000,
+              Description = "Spaghetti saus bolognese",
+              CategoryId = westernCategory.CategoryId,
               CreatedAt = DateTime.UtcNow,
               UpdatedAt = DateTime.UtcNow
             }
@@ -112,8 +161,8 @@ namespace MyApp.WebAPI.Data
       }
 
       // Ambil ID MenuCourse
-      var tomyum = await context.MenuCourses.FirstOrDefaultAsync(m => m.Name == "Tomyum");
-      var pizza = await context.MenuCourses.FirstOrDefaultAsync(m => m.Name == "Pizza");
+      var tomyum = await context.MenuCourses.FirstAsync(m => m.Name == "Tom Yum Thailand");
+      var strawberry = await context.MenuCourses.FirstAsync(m => m.Name == "Strawberry Float");
 
       // === SEED SCHEDULE ===
       if (!context.Schedules.Any())
@@ -153,7 +202,7 @@ namespace MyApp.WebAPI.Data
             },
             new MenuCourseSchedule
             {
-              MenuCourseId = pizza!.MenuCourseId,
+              MenuCourseId = strawberry.MenuCourseId,
               ScheduleId = schedule2.ScheduleId,
               AvailableSlot = 8,
               Status = MSStatus.Active,
