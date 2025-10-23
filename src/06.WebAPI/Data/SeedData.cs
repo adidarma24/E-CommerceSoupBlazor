@@ -210,8 +210,12 @@ namespace MyApp.WebAPI.Data
       if (!context.PaymentMethods.Any())
       {
         context.PaymentMethods.AddRange(
-            new PaymentMethod { Name = "BCA", Logo = "bca.png", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new PaymentMethod { Name = "GoPay", Logo = "gopay.png", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+           new PaymentMethod { Name = "Gopay", Logo = "gopay.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "OVO", Logo = "ovo.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "DANA", Logo = "dana.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "Mandiri", Logo = "mandiri.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "BCA", Logo = "bca.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "BNI", Logo = "bni.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
       }
