@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace MyApp.WebAPI.DTOs
@@ -7,8 +8,8 @@ namespace MyApp.WebAPI.DTOs
         [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
-        [MaxLength(255)]
-        public string? Logo { get; set; }
+        [Required]
+        public IFormFile? LogoFile { get; set; }
 
         [MaxLength(50)]
         public string Status { get; set; } = "Active";
@@ -19,9 +20,8 @@ namespace MyApp.WebAPI.DTOs
         [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
-        [MaxLength(255)]
-        public string? Logo { get; set; }
-
+        public IFormFile? LogoFile { get; set; }
+        
         [MaxLength(50)]
         public string Status { get; set; } = "Active";
     }

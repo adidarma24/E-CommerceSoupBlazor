@@ -1,77 +1,170 @@
 @using MudBlazor
+@using System.Net.Http.Json
+@using MyApp.BlazorUI.DTOs
+@inject IConfiguration Configuration
+@inject HttpClient Http
+@inject ILogger<PaymentMethod> Logger
 
-<div class="mud-dialog-content">
-  <MudStack Spacing="2">
-    @foreach (var method in PaymentMethods)
+<MudDialog>
+  <TitleContent>
+    <MudText Typo="Typo.h6" Align="Align.Center">Select Payment Method</MudText>
+  </TitleContent>
+  <DialogContent>
+    @if (_isLoading)
     {
-      <MudItem>
-        <div class="payment-option @(SelectedMethod == method.Name ? "selected-method" : "")"
-          @onclick="@(() => SetSelectedMethod(method.Name))">
-          <div class="icon-circle">
-            <img src="@method.Icon" class="payment-icon" />
-          </div>
-          <MudText Class="payment-name">@method.Name</MudText>
-        </div>
-      </MudItem>
+      <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
     }
-  </MudStack>
-</div>
-
-<div class="mud-dialog-actions d-flex justify-center mud-dialog-actions">
-  <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="Cancel" Class="action-btn cancel-btn">
-    Cancel
-  </MudButton>
-  <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ConfirmPayNow"
-    Disabled="@(string.IsNullOrEmpty(SelectedMethod))" Class="action-btn pay-btn ml-3" Style="color:black;">
-    Pay Now
-  </MudButton>
-</div>
+    else if (!string.IsNullOrEmpty(_errorMessage))
+    {
+      <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+    }
+    else
+    {
+      <MudStack Spacing="2">
+        @foreach (var method in PaymentMethods)
+        {
+          <MudItem>
+            <div class="payment-option @(SelectedPaymentId == method.PaymentMethodId ? "selected-method" : "")"
+              @onclick="@(() => SetSelectedMethod(method.PaymentMethodId))">
+              <div class="icon-circle">
+                <img src="@GetFullLogoUrl(method.Logo)" class="payment-icon" />
+              </div>
+              <MudText Class="payment-name">@method.Name</MudText>
+            </div>
+          </MudItem>
+        }
+      </MudStack>
+    }
+  </DialogContent>
+  <DialogActions>
+    <div class="mud-dialog-actions d-flex justify-center mud-dialog-actions">
+      <MudButton Variant="Variant.Outlined" Color="Color.Default" @onclick="Cancel" Class="action-btn cancel-btn">
+        Cancel
+      </MudButton>
+      <MudButton Variant="Variant.Filled" Color="Color.Warning" @onclick="ConfirmPayNow"
+        Disabled="@(SelectedPaymentId == null || _isLoading)" Class="action-btn pay-btn ml-3" Style="color:black;">
+        Pay Now
+      </MudButton>
+    </div>
+  </DialogActions>
+</MudDialog>
 
 @code {
-  // [PERUBAHAN] Menggunakan MudDialogInstance untuk interaksi dialog yang lebih aman dan bersih.
   [CascadingParameter]
   public dynamic? MudDialog { get; set; }
 
-  [Parameter] public decimal TotalPrice { get; set; }
+  // State untuk komponen
+  private List<PaymentMethodDto> PaymentMethods = new();
+  private int? SelectedPaymentId { get; set; }
+  private bool _isLoading = true;
+  private string? _errorMessage;
+  private string? ApiBaseUrl;
 
-  private string? SelectedMethod { get; set; }
-
-  // Daftar metode pembayaran tidak berubah
-  private List<(string Name, string Icon)> PaymentMethods = new()
-{
-("Gopay", "images/payment/gopay.svg"),
-("OVO", "images/payment/ovo.svg"),
-("DANA", "images/payment/dana.svg"),
-("Mandiri", "images/payment/mandiri.svg"),
-("BCA", "images/payment/bca.svg"),
-("BNI", "images/payment/bni.svg"),
-};
-
-  private void SetSelectedMethod(string method)
+  /**
+  * @brief Ambil data dari Backend saat dialog diinisialisasi.
+*/
+  protected override async Task OnInitializedAsync()
   {
-    SelectedMethod = method;
-  }
- 
-  // [PERUBAHAN] Fungsi Cancel menjadi lebih sederhana.
-  private void Cancel()
-  {
-    // Cukup panggil MudDialog.Cancel() untuk menutup dialog sebagai "dibatalkan".
-    MudDialog?.Cancel();
-  }
+    ApiBaseUrl = Configuration["ApiBaseUrl"];
 
-  // [PERUBAHAN] Fungsi ConfirmPayNow juga menjadi lebih sederhana.
-  private void ConfirmPayNow()
-  {
-    if (!string.IsNullOrEmpty(SelectedMethod))
+    try
     {
-      // Gunakan MudDialog.Close() untuk menutup dialog dan mengembalikan data.
-      MudDialog?.Close(global::MudBlazor.DialogResult.Ok(SelectedMethod));
+      // Panggil API Backend Anda untuk mendapatkan daftar metode pembayaran
+      var response = await Http.GetFromJsonAsync<ApiResponse<List<PaymentMethodDto>>>("api/payment-methods");
+      if (response != null && response.Success)
+      {
+        PaymentMethods = response.Data; // Mengambil list dari properti .Data
+      }
+      else
+      {
+        _errorMessage = response?.Message ?? "Gagal memuat metode pembayaran.";
+      }
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "Error fetching payment methods");
+      _errorMessage = "Terjadi kesalahan saat menghubungi server.";
+    }
+    finally
+    {
+      _isLoading = false;
+      await InvokeAsync(StateHasChanged);
+    }
+  }
+
+  private string GetFullLogoUrl(string? logoFileName)
+  {
+    if (string.IsNullOrEmpty(logoFileName) || string.IsNullOrEmpty(ApiBaseUrl))
+    {
+      return string.Empty; // Atau gambar placeholder
+    }
+
+    // Menggabungkan: "http://localhost:5099/" + "payment-logos/" + "gopay.svg"
+    return $"{ApiBaseUrl.TrimEnd('/')}/payment-logos/{logoFileName}";
+  }
+
+  /**
+  * @brief Simpan ID yang dipilih dan update UI.
+*/
+  private async Task SetSelectedMethod(int methodId)
+  {
+    SelectedPaymentId = methodId;
+    Logger.LogInformation($"Payment method selected: {methodId}");
+    await InvokeAsync(StateHasChanged); // Pastikan UI update real-time
+  }
+
+  private async Task Cancel()
+  {
+    Logger.LogInformation("Cancel button clicked. Closing dialog without selection.");
+    try
+    {
+      if (MudDialog != null)
+      {
+        MudDialog.Cancel();
+      }
+      else
+      {
+        Logger.LogWarning("MudDialog is null, cannot cancel.");
+      }
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "Error during Cancel operation");
+    }
+  }
+
+  /**
+  * @brief Kembalikan ID (int) yang dipilih ke CheckOut.razor
+*/
+  private async Task ConfirmPayNow()
+  {
+    if (SelectedPaymentId != null)
+    {
+      Logger.LogInformation($"Pay Now button clicked. Selected payment method ID: {SelectedPaymentId.Value}. Closing dialog with result.");
+      try
+      {
+        if (MudDialog != null)
+        {
+          MudDialog.Close(DialogResult.Ok(SelectedPaymentId.Value));
+        }
+        else
+        {
+          Logger.LogWarning("MudDialog is null, cannot close with result.");
+        }
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "Error during ConfirmPayNow operation");
+      }
+    }
+    else
+    {
+      Logger.LogWarning("Pay Now clicked but no payment method selected.");
     }
   }
 }
 
 <style>
-  /* Semua style Anda tetap sama karena sudah sesuai dengan tampilan yang diinginkan */
   .payment-option {
     display: flex;
     align-items: center;

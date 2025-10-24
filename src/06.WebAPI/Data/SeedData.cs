@@ -73,14 +73,14 @@ namespace MyApp.WebAPI.Data
       if (!context.Categories.Any())
       {
         context.Categories.AddRange(
-            new Category { Name = "Asian", Image = "Uploads/asian.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Cold Drink", Image = "Uploads/cold_drink.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Cookies", Image = "Uploads/cookies1.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Desert", Image = "Uploads/desert.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Eastern", Image = "Uploads/eastern.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Hot Drink", Image = "Uploads/hot_drink.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Junkfood", Image = "Uploads/junkfood.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new Category { Name = "Western", Image = "Uploads/western.svg", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+            new Category { Name = "Asian", Image = "Uploads/asian.svg", Description = "Masakan khas Asia", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Cold Drink", Image = "Uploads/cold_drink.svg", Description = "Minuman dingin segar", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Cookies", Image = "Uploads/cookies1.svg", Description = "Berbagai macam kue kering", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Desert", Image = "Uploads/desert.svg", Description = "Makanan penutup", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Eastern", Image = "Uploads/eastern.svg", Description = "Masakan khas Timur", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Hot Drink", Image = "Uploads/hot_drink.svg", Description = "Minuman hangat", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Junkfood", Image = "Uploads/junkfood.svg", Description = "Makanan cepat saji", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Category { Name = "Western", Image = "Uploads/western.svg", Description = "Masakan khas Barat", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
       }
@@ -168,22 +168,15 @@ namespace MyApp.WebAPI.Data
       if (!context.Schedules.Any())
       {
         context.Schedules.AddRange(
-            new Schedule
-            {
-              ScheduleDate = DateTime.UtcNow.AddDays(3),
-              CreatedAt = DateTime.UtcNow,
-              UpdatedAt = DateTime.UtcNow
-            },
-            new Schedule
-            {
-              ScheduleDate = DateTime.UtcNow.AddDays(7),
-              CreatedAt = DateTime.UtcNow,
-              UpdatedAt = DateTime.UtcNow
-            }
+            new Schedule { ScheduleDate = new DateTime(2022, 7, 25), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Schedule { ScheduleDate = new DateTime(2022, 7, 26), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Schedule { ScheduleDate = new DateTime(2022, 7, 27), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Schedule { ScheduleDate = new DateTime(2022, 7, 28), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Schedule { ScheduleDate = new DateTime(2022, 7, 29), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new Schedule { ScheduleDate = new DateTime(2022, 7, 30), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }  
         );
         await context.SaveChangesAsync();
       }
-
       var schedule1 = await context.Schedules.OrderBy(s => s.ScheduleId).FirstAsync();
       var schedule2 = await context.Schedules.OrderBy(s => s.ScheduleId).Skip(1).FirstAsync();
 
@@ -217,8 +210,12 @@ namespace MyApp.WebAPI.Data
       if (!context.PaymentMethods.Any())
       {
         context.PaymentMethods.AddRange(
-            new PaymentMethod { Name = "BCA", Logo = "bca.png", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new PaymentMethod { Name = "GoPay", Logo = "gopay.png", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+           new PaymentMethod { Name = "Gopay", Logo = "gopay.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "OVO", Logo = "ovo.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "DANA", Logo = "dana.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "Mandiri", Logo = "mandiri.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "BCA", Logo = "bca.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new PaymentMethod { Name = "BNI", Logo = "bni.svg", Status = "Active", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
       }
