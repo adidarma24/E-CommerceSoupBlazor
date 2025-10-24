@@ -95,13 +95,6 @@
   string[] errors = { };
   private bool isProcessingPayment = false;
 
-  // --- DTO (Data Transfer Object) untuk API Call ---
-  // Pastikan DTO ini menyertakan PaymentMethodId
-  public record CreateOrderDto(List<int> ScheduleIds, decimal TotalPrice, int PaymentMethodId);
-
-  // Pastikan DTO Respon dari API menyertakan OrderId
-  public record PaymentResponseDto(string OrderId, string PaymentToken, string PaymentUrl);
-
   private bool SelectAll;
   private decimal _totalPrice => CartItems.Where(i => i.Selected).Sum(i => i.Price);
   private List<CartItem> CartItems = new List<CartItem>();

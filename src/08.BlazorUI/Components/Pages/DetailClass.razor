@@ -45,10 +45,12 @@ else
                         Label="Select Schedule" Placeholder="Select Schedule" Variant="Variant.Outlined"
                         Disabled="@(!AvailableSchedules.Any())">
 
+                        @* Tambahkan opsi "Select Schedule" dengan Value="0" sebagai default/placeholder *@
+                        <MudSelectItem Value="0">Select Schedule</MudSelectItem>
+
                         @if (AvailableSchedules.Any())
                         {
                             @foreach (var schedule in AvailableSchedules)
-
                             {
                                 // Tampilkan tanggal, gunakan Id sebagai nilai
                                 <MudSelectItem Value="@schedule.Id">@schedule.ScheduleDate.ToString("dddd, dd MMMM yyyy")
@@ -125,8 +127,8 @@ else
 
     // --- KODE YANG DISESUIKAN ---
     private List<ScheduleDto> AvailableSchedules = new List<ScheduleDto>();
-    private int selectedScheduleId = 0;
-    // --- AKHIR PENYESUAIAN ---
+    private int selectedScheduleId = 0; // Tetap 0 sebagai default, yang akan menampilkan "Select Schedule"
+                                        // --- AKHIR PENYESUAIAN ---
 
     public record OtherMenu(int Id, string Category, string Name, string Price, string ImageUrl);
     private List<OtherMenu> OtherMenuItems = new List<OtherMenu>();
@@ -136,7 +138,7 @@ else
         isLoading = true;
         _apiBaseUrl = (Configuration["ApiBaseUrl"] ?? "http://localhost:5099").TrimEnd('/');
         AvailableSchedules.Clear();
-        selectedScheduleId = 0;
+        selectedScheduleId = 0; // Reset ke 0 setiap kali halaman dimuat
 
         try
         {

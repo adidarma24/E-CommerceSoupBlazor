@@ -38,10 +38,10 @@
   </DialogContent>
   <DialogActions>
     <div class="mud-dialog-actions d-flex justify-center mud-dialog-actions">
-      <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="Cancel" Class="action-btn cancel-btn">
+      <MudButton Variant="Variant.Outlined" Color="Color.Default" @onclick="Cancel" Class="action-btn cancel-btn">
         Cancel
       </MudButton>
-      <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ConfirmPayNow"
+      <MudButton Variant="Variant.Filled" Color="Color.Warning" @onclick="ConfirmPayNow"
         Disabled="@(SelectedPaymentId == null || _isLoading)" Class="action-btn pay-btn ml-3" Style="color:black;">
         Pay Now
       </MudButton>
@@ -88,6 +88,7 @@
     finally
     {
       _isLoading = false;
+      await InvokeAsync(StateHasChanged);
     }
   }
 
@@ -103,27 +104,62 @@
   }
 
   /**
-  * @brief Simpan ID yang dipilih
+  * @brief Simpan ID yang dipilih dan update UI.
 */
-  private void SetSelectedMethod(int methodId)
+  private async Task SetSelectedMethod(int methodId)
   {
     SelectedPaymentId = methodId;
+    Logger.LogInformation($"Payment method selected: {methodId}");
+    await InvokeAsync(StateHasChanged); // Pastikan UI update real-time
   }
 
-  private void Cancel()
+  private async Task Cancel()
   {
-    MudDialog?.Cancel();
+    Logger.LogInformation("Cancel button clicked. Closing dialog without selection.");
+    try
+    {
+      if (MudDialog != null)
+      {
+        MudDialog.Cancel();
+      }
+      else
+      {
+        Logger.LogWarning("MudDialog is null, cannot cancel.");
+      }
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "Error during Cancel operation");
+    }
   }
 
   /**
   * @brief Kembalikan ID (int) yang dipilih ke CheckOut.razor
 */
-  private void ConfirmPayNow()
+  private async Task ConfirmPayNow()
   {
     if (SelectedPaymentId != null)
     {
-      // Kembalikan ID (int) sebagai hasil dialog
-      MudDialog?.Close(DialogResult.Ok(SelectedPaymentId.Value));
+      Logger.LogInformation($"Pay Now button clicked. Selected payment method ID: {SelectedPaymentId.Value}. Closing dialog with result.");
+      try
+      {
+        if (MudDialog != null)
+        {
+          MudDialog.Close(DialogResult.Ok(SelectedPaymentId.Value));
+        }
+        else
+        {
+          Logger.LogWarning("MudDialog is null, cannot close with result.");
+        }
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "Error during ConfirmPayNow operation");
+      }
+    }
+    else
+    {
+      Logger.LogWarning("Pay Now clicked but no payment method selected.");
     }
   }
 }
