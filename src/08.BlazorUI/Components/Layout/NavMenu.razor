@@ -24,26 +24,36 @@
   }
   else
   {
-    <MudLink Href="/" Class="nav-link">
+    <MudLink Href="/checkout" Class="nav-link">
       <MudButton Class="nav-btn">
         <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" />
         <MudText Class="d-flex d-sm-none nav-text">Cart</MudText>
       </MudButton>
     </MudLink>
 
-    <MudLink Href="/" Class="nav-link">
+    <MudLink Href="/my-class" Class="nav-link">
       <MudButton Class="nav-btn">
         <MudIcon Icon="@Icons.Material.Filled.Home" Class="d-flex d-sm-none" />
         <MudText Class="nav-text">My Class</MudText>
       </MudButton>
     </MudLink>
 
-    <MudLink Href="/" Class="nav-link">
+    <MudLink Href="/invoice" Class="nav-link">
       <MudButton Class="nav-btn">
         <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="d-flex d-sm-none" />
         <MudText Class="nav-text">Invoice</MudText>
       </MudButton>
     </MudLink>
+
+    @if (_userRole == "Admin")
+    {
+      <MudLink Href="/admin-dashboard" Class="nav-link">
+        <MudButton Class="nav-btn">
+          <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Class="d-flex d-sm-none" />
+          <MudText Class="nav-text">Admin</MudText>
+        </MudButton>
+      </MudLink>
+    }
 
     <MudText Class="d-none d-sm-flex" style="color:#5b4947; font-size:24px">|</MudText>
     <MudDivider Class="d-flex d-sm-none my-1 line" />
@@ -67,12 +77,15 @@
 @code {
   [Parameter] public string Css { get; set; } = "";
   private bool _isLoggedIn;
+  private string _userRole = "";
   private bool _initialized;
 
   protected override async Task OnInitializedAsync()
   {
     var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+    var user = authState.User;
     _isLoggedIn = authState.User.Identity?.IsAuthenticated ?? false;
+    _userRole = user.FindFirst("role")?.Value ?? "User";
 
     // Listen to changes (e.g., after login/logout)
     if (AuthStateProvider is CustomAuthStateProvider customProvider)
@@ -80,7 +93,9 @@
       customProvider.AuthenticationStateChanged += async task =>
       {
         var state = await task;
+        var changedUser = state.User;
         _isLoggedIn = state.User.Identity?.IsAuthenticated ?? false;
+        _userRole = changedUser.FindFirst("role")?.Value ?? "User";
         await InvokeAsync(StateHasChanged);
       };
     }
