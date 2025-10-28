@@ -36,6 +36,7 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<MyClassServices>();
 builder.Services.AddScoped<CourseService>();
 builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<TokenService>();
 
 // Blazored LocalStorage (for token storage)
 builder.Services.AddBlazoredLocalStorage();
