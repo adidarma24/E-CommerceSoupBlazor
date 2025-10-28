@@ -132,29 +132,20 @@
       var result = await AuthService.ResetPasswordAsync(resetPasswordRequestDto);
       if(result.Success)
       {
-      Console.WriteLine("Password reset Success.");
+        Console.WriteLine("Password reset Success.");
 
-        Snackbar.Add("Password has been reset successfully! Please log in with your new password.", Severity.Success);
-
-        await Task.Delay(1500);
-      passwordError = result.Message;
-      Navigation.NavigateTo("/password-reset-success");
-        
-      
+        passwordError = result.Message;
+        Navigation.NavigateTo("/password-reset-success");
       }
       else 
       {
         passwordError = result.Message;
         Console.WriteLine($"❌ Password reset failed: {passwordError}");
-
-        // ❌ Snackbar error
-        Snackbar.Add(passwordError, Severity.Error);
       }
     }
-    catch(Exception ex)
+    catch(Exception)
     { 
-      passwordError = $"server error";
-      Snackbar.Add("An unexpected server error occurred. Please try again later.", Severity.Error);
+      passwordError = $"An unexpected server error occurred. Please try again later.";
     }
     finally
     {

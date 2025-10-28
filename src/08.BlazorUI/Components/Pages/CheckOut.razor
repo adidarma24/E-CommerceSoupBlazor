@@ -187,7 +187,7 @@
     // 1. Validasi Item Keranjang
     if (_totalPrice <= 0)
     {
-      Snackbar.Add("Tidak ada item yang dipilih untuk dibayar.", Severity.Info);
+      Snackbar.Add("No item selected.", Severity.Info);
       return;
     }
 
@@ -206,7 +206,7 @@
     else
     {
       // Pengguna menekan "Cancel"
-      Snackbar.Add("Pembayaran dibatalkan.", Severity.Info);
+      Snackbar.Add("Payment canceled.", Severity.Info);
     }
   }
 
@@ -239,7 +239,6 @@
         // if create invoice success
         if (response.Success)
         {
-          Snackbar.Add("Pesanan berhasil dibuat!", Severity.Success);
           Console.WriteLine($"📦 Invoice berhasil dibuat. {response}");
 
           foreach (var item in selectedItems)
@@ -263,7 +262,7 @@
 
             var joinedNames = string.Join(", ", courseNames);
 
-            Snackbar.Add($"Course ini sudah pernah dibeli: {joinedNames}", Severity.Error);
+            Snackbar.Add($"This course has already been puchased: {joinedNames}", Severity.Error);
           }
         }
         else

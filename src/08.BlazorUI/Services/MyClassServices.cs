@@ -69,7 +69,6 @@ namespace MyApp.BlazorUI.Services
         }
 
         var json = await response.Content.ReadAsStringAsync();
-        Console.WriteLine($"🧾 My Class JSON Response: {json}");
 
         var wrapped = JsonSerializer.Deserialize<MyClassResponse>(
             json,
