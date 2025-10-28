@@ -1,0 +1,190 @@
+@using MudBlazor
+@using MyApp.BlazorUI.DTOs
+@using MyApp.BlazorUI.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using MyApp.BlazorUI.Components.Models
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Course</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isFormValid">
+            <MudTextField T="string" Label="Nama Course" @bind-Value="_editCourse.Name" Required="true"
+                RequiredError="Nama wajib diisi" />
+
+            <MudTextField T="string" Label="Deskripsi" @bind-Value="_editCourse.Description" Lines="3" Required="true"
+                RequiredError="Deskripsi wajib diisi" />
+
+            <MudNumericField T="decimal" Label="Harga" @bind-Value="_editCourse.Price" Required="true"
+                RequiredError="Harga wajib diisi" Adornment="Adornment.Start" AdornmentText="Rp" />
+
+            <MudSelect T="int" Label="Kategori" @bind-Value="_editCourse.CategoryId" Required="true"
+                RequiredError="Kategori wajib dipilih">
+                @foreach (var cat in Categories)
+                {
+                    <MudSelectItem Value="@cat.Id">@cat.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudDatePicker Label="Tanggal Jadwal" Date="@_selectedDate" DateChanged="OnDateChanged" Required="true"
+                MinDate="@DateTime.Today" />
+
+            <MudTimePicker Label="Waktu Jadwal" Value="@_selectedTime" ValueChanged="OnTimeChanged" AmPm="false"
+                MinuteInterval="5" />
+
+            <MudNumericField T="int" Label="Slot Tersedia" @bind-Value="_editCourse.AvailableSlot" Min="1"
+                Required="true" RequiredError="Slot wajib diisi" />
+
+            <MudItem>
+                <MudText Typo="Typo.body2">Upload Gambar (opsional)</MudText>
+                <InputFile OnChange="OnFileSelected" accept="image/*" />
+                @if (_selectedFile != null)
+                {
+                    <MudText Typo="Typo.caption">File: @_selectedFile.Name (@(_selectedFile.Size / 1024) KB)</MudText>
+                }
+                else if (!string.IsNullOrEmpty(_imagePreview))
+                {
+                    <div style="margin-top:0.5rem;">
+                        <MudAvatar Size="Size.Medium" Image="@_imagePreview" />
+                    </div>
+                }
+            </MudItem>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Color="Color.Secondary">Batal</MudButton>
+        <MudButton OnClick="SubmitAsync" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_isFormValid)">
+            Simpan Perubahan
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private CourseService CourseService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter] public List<CategoryDto> Categories { get; set; } = new();
+    [Parameter] public CourseModel CourseToEdit { get; set; } = new();
+
+    private MudForm? _form;
+    private bool _isFormValid;
+    private CreateCourseDto _editCourse = new();
+    private IBrowserFile? _selectedFile;
+    private string? _imagePreview;
+
+    private DateTime? _selectedDate;
+    private TimeSpan _selectedTime;
+
+    protected override void OnInitialized()
+    {
+        if (CourseToEdit != null)
+        {
+            _editCourse = new CreateCourseDto
+            {
+                Name = CourseToEdit.Name,
+                Description = CourseToEdit.Description,
+                Price = CourseToEdit.Price,
+                CategoryId = CourseToEdit.CategoryId,
+                AvailableSlot = CourseToEdit.AvailableSlot,
+                ScheduleDate = CourseToEdit.ScheduleDate ?? DateTime.Today.AddHours(9)
+            };
+
+            // ✅ Pisahkan tanggal & jam dari ScheduleDate
+            var sched = _editCourse.ScheduleDate ?? DateTime.Today.AddHours(9);
+            _selectedDate = sched.Date;
+            _selectedTime = sched.TimeOfDay;
+
+            _imagePreview = CourseToEdit.ImageUrl;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+    }
+
+    private void OnDateChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            var current = _editCourse.ScheduleDate ?? DateTime.Now;
+            _selectedDate = newDate.Value;
+            _editCourse.ScheduleDate = new DateTime(
+            newDate.Value.Year,
+            newDate.Value.Month,
+            newDate.Value.Day,
+            current.Hour,
+            current.Minute,
+            0,
+            DateTimeKind.Local
+            );
+        }
+    }
+
+    private void OnTimeChanged(TimeSpan newTime)
+    {
+        _selectedTime = newTime;
+
+        var current = _editCourse.ScheduleDate ?? DateTime.Now;
+        _editCourse.ScheduleDate = new DateTime(
+        current.Year,
+        current.Month,
+        current.Day,
+        newTime.Hours,
+        newTime.Minutes,
+        0,
+        DateTimeKind.Local
+        );
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_form is null)
+            return;
+
+        await _form.Validate();
+        if (!_isFormValid)
+        {
+            Snackbar.Add("Periksa kembali form Anda.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // Gabungkan tanggal dan jam sebelum kirim
+            if (_selectedDate.HasValue)
+            {
+                var combined = _selectedDate.Value.Date + _selectedTime;
+                _editCourse.ScheduleDate = DateTime.SpecifyKind(combined, DateTimeKind.Local);
+            }
+
+            var updated = await CourseService.UpdateCourseAsync(
+            CourseToEdit.Id,
+            _editCourse,
+            _selectedFile,
+            CourseToEdit.ScheduleId,
+            CourseToEdit.ScheduleAssignmentId
+            );
+
+            if (updated)
+            {
+                Snackbar.Add("Perubahan berhasil disimpan.", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Gagal menyimpan perubahan course.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Terjadi kesalahan: {ex.Message}", Severity.Error);
+        }
+    }
+}

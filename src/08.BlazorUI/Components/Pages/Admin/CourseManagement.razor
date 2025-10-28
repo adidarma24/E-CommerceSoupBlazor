@@ -1,18 +1,27 @@
 @page "/admin-course"
 @layout AdminLayout
-@using MudBlazor
+@using MyApp.BlazorUI.DTOs
+@using MyApp.BlazorUI.Services
+@using MyApp.BlazorUI.Components.Shared
+@using MyApp.BlazorUI.Components.Shared.Admin
+
+@inject CourseService CourseService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>Course Management</PageTitle>
 
-<MudPaper Elevation="1" Style="padding: 1rem; height: calc(100vh - 8rem); display:flex; flex-direction:column;">
-    <MudText Typo="Typo.h4" Class="mb-4">Course Management</MudText>
+<MudPaper Class="course-container" Elevation="1">
+    <div class="header-section">
+        <MudText Typo="Typo.h5" Class="title">Course Management</MudText>
+        <MudButton OnClick="OpenDialogAddCourseAsync" Variant="Variant.Filled" Class="btn-add">
+            <MudIcon Icon="@Icons.Material.Filled.Add" /> Add Course
+        </MudButton>
+    </div>
 
-    <MudButton Variant="Variant.Filled" Class="rounded-lg btn-add mb-3" Style="width:150px;" OnClick="@OpenAddDialog">
-        Add Course
-    </MudButton>
-
-    <div style="flex:1; overflow-y:auto;">
-        <MudTable Items="@Courses" FixedHeader="true" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+    <div class="course-table">
+        <MudTable Items="@Courses" FixedHeader="true" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading"
+            LoadingProgressColor="Color.Info" Elevation="0">
             <HeaderContent>
                 <MudTh class="t">Name</MudTh>
                 <MudTh class="t">Image</MudTh>
@@ -23,122 +32,213 @@
                 <MudTh class="t">Available Slot</MudTh>
                 <MudTh class="t">Action</MudTh>
             </HeaderContent>
+
             <RowTemplate>
                 <MudTd class="t">@context.Name</MudTd>
                 <MudTd class="t">
-                    <MudAvatar Image="@context.ImageUrl" Size="Size.Medium" />
+                    @if (!string.IsNullOrEmpty(context.ImageUrl))
+                    {
+                        <MudImage Src="@CourseService.GetFullImageUrl(context.ImageUrl)" Width="40" Height="40" />
+                    }
                 </MudTd>
-                <MudTd class="t">@context.Price</MudTd>
+                <MudTd class="t">@("IDR " + context.Price.ToString("N0", new System.Globalization.CultureInfo("id-ID")))
+                </MudTd>
                 <MudTd class="t">@context.Description</MudTd>
                 <MudTd class="t">@context.CategoryName</MudTd>
                 <MudTd class="t">@context.Schedule</MudTd>
                 <MudTd class="t">@context.AvailableSlot</MudTd>
-                <MudTd class="t">
-                    <MudButton Variant="Variant.Filled" Class="rounded-lg btn-edit me-2"
-                        OnClick="@(() => OpenEditDialog(context))">
-                        Edit
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Class="rounded-lg btn-delete"
-                        OnClick="@(() => DeleteCourse(context))">
-                        Delete
-                    </MudButton>
+                <MudTd class="t gap-2">
+                    <MudButton Variant="Variant.Filled" Class="btn-edit"
+                        OnClick="@(() => OpenDialogEditCourseAsync(context))">Edit</MudButton>
+                    <MudButton Variant="Variant.Filled" Class="btn-delete"
+                        OnClick="@(() => OnDeleteCourseAsync(context.Id))">Delete</MudButton>
                 </MudTd>
             </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
         </MudTable>
     </div>
-
-    @if (ShowDialog)
-    {
-        <MudDialog IsVisible="true">
-            <DialogContent>
-                <MudText Typo="Typo.h6">@DialogTitle</MudText>
-                <MudText>Ini contoh dialog (belum terhubung ke backend).</MudText>
-            </DialogContent>
-            <DialogActions>
-                <MudButton OnClick="@CloseDialog" Color="Color.Primary">Close</MudButton>
-            </DialogActions>
-        </MudDialog>
-    }
 </MudPaper>
 
 @code {
-    private bool ShowDialog = false;
-    private string DialogTitle = "";
-    private List<CourseItem> Courses = new();
+    private bool _loading;
+    private List<CourseModel> Courses = new();
+    private List<CategoryDto> Categories = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Dummy data dulu
-        Courses = new List<CourseItem>
+        await LoadInitialDataAsync();
+    }
+
+    private async Task LoadInitialDataAsync()
+    {
+        _loading = true;
+        try
+        {
+            await Task.WhenAll(LoadCoursesAsync(), LoadCategoriesAsync());
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Gagal memuat data awal: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task LoadCoursesAsync()
+    {
+        try
+        {
+            Courses = await CourseService.GetCoursesAsync() ?? new();
+            if (Courses.Count == 0)
+                Snackbar.Add("Tidak ada data course ditemukan.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Gagal memuat data course: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            Categories = await CourseService.GetCategoriesAsync() ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Gagal memuat kategori: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenDialogAddCourseAsync()
+    {
+        var parameters = new DialogParameters
+        {
+            ["Categories"] = Categories
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium };
+
+        var dialog = DialogService.Show<AddCourseDialog>("Tambah Course", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // 🔹 Ambil course baru dari API, tapi hanya tambahkan ke list tanpa reset urutan
+            var newCourses = await CourseService.GetCoursesAsync();
+
+            // 🔹 Cari course baru yang belum ada di list sekarang
+            var latest = newCourses
+            .Where(nc => !Courses.Any(c => c.Id == nc.Id))
+            .ToList();
+
+            if (latest.Any())
+            {
+                // 🔹 Tambahkan ke akhir list agar tidak di atas
+                Courses.AddRange(latest);
+            }
+
+            Snackbar.Add("Course baru berhasil ditambahkan dan ditampilkan.", Severity.Success);
+        }
+    }
+
+
+
+    private async Task OpenDialogEditCourseAsync(CourseModel course)
+    {
+        var parameters = new DialogParameters
 {
-new() { Name = "Pizza", ImageUrl = "https://via.placeholder.com/80", Price = "100", Description = "Pizza", CategoryName
-= "Western", Schedule = "Sunday", AvailableSlot = 10 },
-new() { Name = "pudding", ImageUrl = "https://via.placeholder.com/80", Price = "120", Description = "Pudding",
-CategoryName = "Dessert", Schedule = "Tuesday", AvailableSlot = 5 },
-new() { Name = "Tomyum", ImageUrl = "https://via.placeholder.com/80", Price = "90", Description = "Tomyum", CategoryName
-= "Asian", Schedule = "Friday", AvailableSlot = 8 }
+{ "Categories", Categories },
+{ "CourseToEdit", course }
 };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<EditCourseDialog>("Edit Course", parameters: parameters, options: options);
+        var result = await dialog.Result;
+
+        if (result?.Data is true)
+        {
+            Snackbar.Add("✅ Course berhasil diperbarui.", Severity.Success);
+            await LoadCoursesAsync();
+        }
     }
 
-    private void OpenAddDialog()
+    private async Task OnDeleteCourseAsync(int id)
     {
-        DialogTitle = "Add New Course";
-        ShowDialog = true;
+        bool? confirmed = await DialogService.ShowMessageBox(
+        "Konfirmasi Hapus",
+        "Apakah Anda yakin ingin menghapus course ini?",
+        yesText: "Ya, Hapus",
+        cancelText: "Batal");
+
+        if (confirmed == true)
+        {
+            var success = await CourseService.DeleteCourseAsync(id);
+            if (success)
+            {
+                Snackbar.Add("🗑️ Course berhasil dihapus.", Severity.Success);
+                await LoadCoursesAsync();
+            }
+            else
+            {
+                Snackbar.Add("Gagal menghapus course.", Severity.Error);
+            }
+        }
     }
 
-    private void OpenEditDialog(CourseItem course)
-    {
-        DialogTitle = $"Edit Course: {course.Name}";
-        ShowDialog = true;
-    }
-
-    private void DeleteCourse(CourseItem course)
-    {
-        Courses.Remove(course);
-    }
-
-    private void CloseDialog()
-    {
-        ShowDialog = false;
-    }
-
-    public class CourseItem
-    {
-        public string Name { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
-        public string Price { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string CategoryName { get; set; } = "";
-        public string Schedule { get; set; } = "";
-        public int AvailableSlot { get; set; }
-    }
 }
 
 <style>
+    .course-container {
+        padding: 1.5rem;
+        margin: 0 auto;
+        max-width: 1000px;
+        background-color: #fff;
+    }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .course-table {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
     .btn-add {
         background-color: green;
-        text-transform: none;
         color: white;
+        text-transform: none;
     }
 
     .btn-add:hover {
-        background-color: #0f7a0f;
+        background-color: darkgreen;
     }
 
     .btn-edit {
         background-color: #fabc1d;
-        text-transform: none;
         color: white;
+        text-transform: none;
+        margin-right: 0.3rem;
     }
 
     .btn-edit:hover {
-        background-color: #f1b60d;
+        background-color: #e6a500;
     }
 
     .btn-delete {
         background-color: red;
-        text-transform: none;
         color: white;
+        text-transform: none;
     }
 
     .btn-delete:hover {
@@ -151,6 +251,6 @@ new() { Name = "Tomyum", ImageUrl = "https://via.placeholder.com/80", Price = "9
 
     .t {
         text-align: center;
-        vertical-align: middle;
+        vertical-align: middle !important;
     }
 </style>

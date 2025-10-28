@@ -107,7 +107,6 @@
     padding: 1.5rem;
   }
 
-  /* gunakan @@media agar Razor tidak menganggapnya directive */
   @@media (max-width: 768px) {
     .nav-btn {
       font-size: 0.9rem;
@@ -230,14 +229,14 @@ new("Payment Method", "/admin-payment", Icons.Material.Filled.Payments),
         if (AuthStateProvider is CustomAuthStateProvider customProvider)
           customProvider.NotifyUserLogout();
 
-        Snackbar.Add("✅ Logout berhasil! Sampai jumpa 👋", Severity.Success);
+        Snackbar.Add("✅ Logout Succes! See you later 👋", Severity.Success);
 
         await Task.Delay(800);
         Navigation.NavigateTo("/login", forceLoad: true);
       }
       else
       {
-        Snackbar.Add(result.Message ?? "Logout gagal!", Severity.Error);
+        Snackbar.Add(result.Message ?? "Logout Failed!", Severity.Error);
       }
     }
     catch (Exception ex)

@@ -1,132 +1,268 @@
 @page "/admin-category"
+@using MyApp.BlazorUI.Models
+@using MyApp.BlazorUI.Services
+@using MyApp.BlazorUI.Components.Shared.Admin
 @layout AdminLayout
-@using MudBlazor
+
+@inject IDialogService DialogService
+@inject CategoryService CategoryService
+@inject ISnackbar Snackbar
 
 <PageTitle>Category Management</PageTitle>
 
-<MudPaper Elevation="1" Style="padding: 1rem; height: calc(100vh - 8rem); display:flex; flex-direction:column;">
-    <MudText Typo="Typo.h4" Class="mb-4">Category Management</MudText>
-
-    <MudButton Variant="Variant.Filled" Class="rounded-lg btn-add mb-3" Style="width:180px;" OnClick="@OpenAddDialog">
-        Add Category
-    </MudButton>
-
-    <div style="flex:1; overflow-y:auto;">
-        <MudTable Items="@Categories" FixedHeader="true" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
-            <HeaderContent>
-                <MudTh class="t">Name</MudTh>
-                <MudTh class="t">Image</MudTh>
-                <MudTh class="t">Description</MudTh>
-                <MudTh class="t">Menu Course Count</MudTh>
-                <MudTh class="t">Action</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd class="t">@context.Name</MudTd>
-                <MudTd class="t">
-                    <MudAvatar Image="@context.ImageUrl" Size="Size.Medium" />
-                </MudTd>
-                <MudTd class="t">@context.Description</MudTd>
-                <MudTd class="t">@context.MenuCourseCount</MudTd>
-                <MudTd class="t">
-                    <MudButton Variant="Variant.Filled" Class="rounded-lg btn-edit me-2"
-                        OnClick="@(() => OpenEditDialog(context))">
-                        Edit
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Class="rounded-lg btn-delete"
-                        OnClick="@(() => DeleteCategory(context))">
-                        Delete
-                    </MudButton>
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
+<MudPaper Elevation="2" Class="category-container">
+    <div class="header-section">
+        <MudText Typo="Typo.h5" Class="title">Category Management</MudText>
+        <MudButton OnClick="OpenDialogAddCategoryAsync" Variant="Variant.Filled" Class="btn-add">
+            Add Category
+        </MudButton>
     </div>
 
-    @if (ShowDialog)
-    {
-        <MudDialog IsVisible="true">
-            <DialogContent>
-                <MudText Typo="Typo.h6">@DialogTitle</MudText>
-                <MudText>Ini contoh dialog (belum terhubung ke backend).</MudText>
-            </DialogContent>
-            <DialogActions>
-                <MudButton OnClick="@CloseDialog" Color="Color.Primary">Close</MudButton>
-            </DialogActions>
-        </MudDialog>
-    }
+    <MudTable Items="@Categories" FixedHeader="true" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading"
+        LoadingProgressColor="Color.Info" Class="category-table">
+        <HeaderContent>
+            <MudTh class="t">Name</MudTh>
+            <MudTh class="t">Description</MudTh>
+            <MudTh class="t">Menus</MudTh>
+            <MudTh class="t">Image</MudTh>
+            <MudTh class="t">Action</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd class="t">@context.Name</MudTd>
+            <MudTd class="t">@context.Description</MudTd>
+            <MudTd class="t">@context.MenuCourseCount</MudTd>
+            <MudTd class="t">
+                @if (!string.IsNullOrEmpty(context.Image))
+                {
+                    <MudImage Src="@CategoryService.GetFullImageUrl(context.Image)" Width="40" Height="40" />
+                }
+            </MudTd>
+            <MudTd class="t">
+                <MudButton OnClick="@(() => OpenDialogEditCategoryAsync(context))" Variant="Variant.Filled"
+                    Class="btn-edit">
+                    Edit
+                </MudButton>
+                <MudButton OnClick="@(() => DeleteCategoryAsync(context))" Variant="Variant.Filled" Class="btn-delete">
+                    Delete
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+
+
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
 </MudPaper>
 
 @code {
-    private bool ShowDialog = false;
-    private string DialogTitle = "";
-    private List<CategoryItem> Categories = new();
+    private bool _loading;
+    private List<CategoryDto> Categories = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync() => await LoadCategoriesAsync();
+
+    private async Task LoadCategoriesAsync()
     {
-        // Dummy data sementara
-        Categories = new List<CategoryItem>
-{
-new() { Name = "Asian", ImageUrl = "https://via.placeholder.com/80", Description = "Asian", MenuCourseCount = 12 },
-new() { Name = "Western", ImageUrl = "https://via.placeholder.com/80", Description = "Western", MenuCourseCount = 8 },
-new() { Name = "Dessert", ImageUrl = "https://via.placeholder.com/80", Description = "Dessert", MenuCourseCount = 10 }
-};
+        _loading = true;
+        try
+        {
+            Categories = await CategoryService.GetAllAsync() ?? new List<CategoryDto>();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Failed to load categories: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
     }
 
-    private void OpenAddDialog()
+    // ✅ ADD CATEGORY
+    private async Task OpenDialogAddCategoryAsync()
     {
-        DialogTitle = "Add New Category";
-        ShowDialog = true;
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<CategoryDialog>("Add Category", options: options);
+        var result = await dialog.Result;
+
+        // jika user cancel atau menutup dialog
+        if (result == null || result.Canceled) return;
+
+        // dialog mengembalikan CreateCategoryDto (sesuai implementasi dialog)
+        if (result.Data is CreateCategoryDto createModel)
+        {
+            try
+            {
+                var added = await CategoryService.AddAsync(createModel);
+                if (added != null)
+                {
+                    // langsung tambahkan ke list agar tampil tanpa reload penuh
+                    Categories.Add(added);
+                    Snackbar.Add($"✅ Category '{added.Name}' added successfully.", Severity.Success);
+                }
+                else
+                {
+                    // jika API tidak mengembalikan object, reload untuk sinkronisasi
+                    await LoadCategoriesAsync();
+                    Snackbar.Add("⚠️ Add succeeded but no data returned — refreshed list.", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                // tampilkan pesan error dan refresh list untuk konsistensi
+                Snackbar.Add($"❌ Failed to add category: {ex.Message}", Severity.Error);
+                await LoadCategoriesAsync();
+            }
+        }
     }
 
-    private void OpenEditDialog(CategoryItem category)
+    // ✅ EDIT CATEGORY
+    private async Task OpenDialogEditCategoryAsync(CategoryDto category)
     {
-        DialogTitle = $"Edit Category: {category.Name}";
-        ShowDialog = true;
+        if (category == null) return;
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var parameters = new DialogParameters { { "Title", "Edit Category" }, { "Category", category } };
+        var dialog = await DialogService.ShowAsync<CategoryDialog>("Edit Category", parameters: parameters, options: options);
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled) return;
+
+        try
+        {
+            // dialog mungkin mengembalikan CreateCategoryDto (sesuai implementasimu)
+            // kita terima CreateCategoryDto juga dan konversi ke UpdateCategoryDto
+            UpdateCategoryDto updateDto = null!;
+
+            if (result.Data is UpdateCategoryDto u)
+            {
+                updateDto = u;
+            }
+            else if (result.Data is CreateCategoryDto cm)
+            {
+                updateDto = new UpdateCategoryDto
+                {
+                    Name = cm.Name,
+                    Description = cm.Description,
+                    ImageFile = cm.ImageFile
+                };
+            }
+            else
+            {
+                // tipe tidak dikenali -> reload supaya tetap konsisten
+                await LoadCategoriesAsync();
+                Snackbar.Add("⚠️ Unexpected dialog result type — refreshed list.", Severity.Warning);
+                return;
+            }
+
+            var updated = await CategoryService.UpdateAsync(category.Id, updateDto);
+            if (updated != null)
+            {
+                // replace item lokal supaya UI langsung update
+                var idx = Categories.FindIndex(c => c.Id == category.Id);
+                if (idx >= 0)
+                    Categories[idx] = updated;
+                else
+                    Categories.Insert(0, updated);
+
+                Snackbar.Add($"✅ Category '{updated.Name}' updated successfully.", Severity.Success);
+            }
+            else
+            {
+                // backend tidak mengembalikan object -> reload
+                await LoadCategoriesAsync();
+                Snackbar.Add("⚠️ Update succeeded but no data returned — refreshed list.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Failed to update category: {ex.Message}", Severity.Error);
+            await LoadCategoriesAsync();
+        }
     }
 
-    private void DeleteCategory(CategoryItem category)
+    // ✅ DELETE CATEGORY
+    private async Task DeleteCategoryAsync(CategoryDto category)
     {
-        Categories.Remove(category);
-    }
+        if (category == null) return;
 
-    private void CloseDialog()
-    {
-        ShowDialog = false;
-    }
+        bool confirmed = await DialogService.ShowMessageBox(
+        "Confirm Delete",
+        $"Apakah kamu yakin ingin menghapus kategori '{category.Name}'?",
+        yesText: "Yes", cancelText: "Cancel") ?? false;
 
-    public class CategoryItem
-    {
-        public string Name { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
-        public string Description { get; set; } = "";
-        public int MenuCourseCount { get; set; }
+        if (!confirmed) return;
+
+        try
+        {
+            var success = await CategoryService.DeleteAsync(category.Id);
+            if (success)
+            {
+                // hapus langsung dari list
+                Categories.RemoveAll(c => c.Id == category.Id);
+                Snackbar.Add($"✅ Category '{category.Name}' deleted successfully.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"⚠️ Failed to delete '{category.Name}'.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Error deleting category: {ex.Message}", Severity.Error);
+        }
     }
 }
 
+
 <style>
-    .btn-add {
-        background-color: green;
-        text-transform: none;
-        color: white;
+    .category-container {
+        padding: 1.5rem;
+        margin: 0 auto;
+        max-width: 1000px;
+        overflow: hidden;
+        background-color: #fff;
     }
 
-    .btn-add:hover {
-        background-color: #0f7a0f;
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .category-table {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .btn-add {
+        background-color: green;
+        color: white;
+        text-transform: none;
     }
 
     .btn-edit {
         background-color: #fabc1d;
-        text-transform: none;
         color: white;
-    }
-
-    .btn-edit:hover {
-        background-color: #f1b60d;
+        text-transform: none;
+        margin-right: 0.3rem;
     }
 
     .btn-delete {
         background-color: red;
-        text-transform: none;
         color: white;
+        text-transform: none;
+    }
+
+    .btn-add:hover {
+        background-color: darkgreen;
+    }
+
+    .btn-edit:hover {
+        background-color: #e6a500;
     }
 
     .btn-delete:hover {
@@ -139,6 +275,6 @@ new() { Name = "Dessert", ImageUrl = "https://via.placeholder.com/80", Descripti
 
     .t {
         text-align: center;
-        vertical-align: middle;
+        vertical-align: middle !important;
     }
 </style>
