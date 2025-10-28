@@ -55,7 +55,7 @@
     else
     {
         <MudGrid Spacing="4">
-            @foreach (FoodItem item in Foods.Take(6))
+            @foreach (FoodItem item in Foods.Skip((currentPage - 1) * pageSize).Take(pageSize))
             {
                 <MudItem xs="12" sm="6" md="4">
                     @* UBAH OnCardClick UNTUK MENGGUNAKAN ID *@
@@ -71,6 +71,11 @@
                 </MudItem>
             }
         </MudGrid>
+
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudPagination Count="(int)Math.Ceiling((double)totalItems / pageSize)" @bind-Selected="currentPage"
+                Variant="Variant.Outlined" Color="Color.Warning" />
+        </MudGrid>
     }
 </MudContainer>
 
@@ -82,7 +87,8 @@
         <MudText Typo="Typo.body1" Class="text-white" Align="Align.Center">
             Our curriculum is designed to take you from enthusiast to expert.
             Explore a diverse range of global cuisines, understand the science behind flavor, and practice hands-on in
-            our state-of-the-art kitchen. You'll learn more than just recipes; you'll learn the art and discipline
+            our state-of-the-art kitchen.
+            You'll learn more than just recipes; you'll learn the art and discipline
             necessary to excel in the professional culinary world.
         </MudText>
     </MudContainer>
@@ -103,14 +109,13 @@
     else
     {
         <MudGrid Class="food-grid">
-            @foreach (FoodType food in FoodTypes)
+            @foreach (FoodType food in FoodTypes.Skip((categoryCurrentPage - 1) * categoryPageSize).Take(categoryPageSize))
             {
                 <MudItem xs="12" sm="6" md="4" lg="3">
-                    <MudCard Elevation="1" @onclick="() => OnCategoryClick(food)" Class="card-hover"
-                        Style="height: 200px; width: 230px;">
-                        <MudCardMedia Image="@food.Image" Alt="@food.Name" />
+                    <MudCard Elevation="1" @onclick="() => OnCategoryClick(food)" Class="card-hover food-type-card">
+                        <MudCardMedia Image="@food.Image" Alt="@food.Name" Height="150" />
                         <MudCardContent>
-                            <MudText Typo="Typo.h6" Align="Align.Center" Class="mt-4" Style="font-size:24px;">
+                            <MudText Typo="Typo.body1" Align="Align.Center" Class="food-type-title">
                                 @food.Name
                             </MudText>
                         </MudCardContent>
@@ -118,14 +123,26 @@
                 </MudItem>
             }
         </MudGrid>
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudPagination Count="(int)Math.Ceiling((double)categoryTotalItems / categoryPageSize)"
+                @bind-Selected="categoryCurrentPage" Variant="Variant.Outlined" Color="Color.Warning" />
+        </MudGrid>
     }
 </MudContainer>
 
 @code {
-    public record FoodItem(int Id, string Image, string Category, string Title, string Price);
+    // State untuk pagination
+    private int currentPage = 1;
+    private int pageSize = 6;
+    private int totalItems = 0;
+    private int categoryCurrentPage = 1;
+    private int categoryPageSize = 8;
+    private int categoryTotalItems = 0;
 
+    public record FoodItem(int Id, string Image, string Category, string Title, string Price);
     public record FoodType(string Image, string Name);
     public record StatItem(string Number, string Description);
+
     private void OnCardClick(FoodItem item)
     {
         NavManager.NavigateTo($"/menu/detail/{item.Id}");
@@ -145,14 +162,17 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
 };
     private CultureInfo idCulture = new CultureInfo("id-ID");
     private string _apiBaseUrl = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
-        // ✅ Cek apakah ada query string "login=success"
         var uri = new Uri(Navigation.Uri);
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+        // ✅ PERBAIKAN: Memberi notifikasi Snackbar saat login berhasil
         if (query.TryGetValue("login", out var status) && status == "success")
         {
-            await Task.Delay(200);
+            // Tampilkan notifikasi
+            Snackbar.Add("Login berhasil!", Severity.Success);
 
             // Opsional: hapus query dari URL biar gak muncul terus
             var cleanUrl = Navigation.Uri.Split('?')[0];
@@ -160,7 +180,6 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
         }
 
         _apiBaseUrl = (Configuration["ApiBaseUrl"] ?? "http://localhost:5099").TrimEnd('/');
-
         try
         {
             var categoryResponse = await Http.GetFromJsonAsync<ApiResponse<List<CategoryDto>>>("api/categories");
@@ -172,6 +191,7 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
                 dto.Name
                 ))
                 .ToList();
+                categoryTotalItems = FoodTypes.Count;
             }
 
             var courseResponse = await Http.GetFromJsonAsync<ApiResponse<List<MenuCourseDto>>>("api/menucourses");
@@ -186,6 +206,8 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
                 "IDR " + dto.Price.ToString("N0", idCulture)
                 ))
                 .ToList();
+
+                totalItems = Foods.Count;
             }
         }
         catch (Exception ex)
@@ -279,7 +301,9 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
 
     .food-grid {
         justify-content: center;
-        padding: 1rem 8rem 4rem 8rem;
+        [cite_start]
+        /* ✅ PERBAIKAN: Padding horizontal (kiri/kanan) dihapus  */
+        /* Biarkan MudContainer yang mengatur padding responsif */
     }
 
     .food-img {
@@ -309,5 +333,19 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
         width: 100%;
         margin: auto;
         height: 100%;
+    }
+
+    [cite_start]
+
+    /* ✅ PERBAIKAN: Style dipindahkan dari inline ke class CSS  */
+    .food-type-card {
+        height: 100%;
+    }
+
+    .food-type-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        padding: 0;
+        margin-top: 0;
     }
 </style>
