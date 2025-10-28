@@ -1,0 +1,158 @@
+@using MudBlazor
+@using MyApp.BlazorUI.DTOs
+@using MyApp.BlazorUI.Services
+@using Microsoft.AspNetCore.Components.Forms
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Tambah Course</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isFormValid">
+
+            <MudTextField T="string" Label="Nama Course" @bind-Value="_newCourse.Name" Required="true"
+                RequiredError="Nama wajib diisi" />
+
+            <MudTextField T="string" Label="Deskripsi" @bind-Value="_newCourse.Description" Lines="3" Required="true"
+                RequiredError="Deskripsi wajib diisi" />
+
+            <MudNumericField T="decimal" Label="Harga" @bind-Value="_newCourse.Price" Required="true"
+                RequiredError="Harga wajib diisi" Adornment="Adornment.Start" AdornmentText="Rp" />
+
+            <MudSelect T="int" Label="Kategori" @bind-Value="_newCourse.CategoryId" Required="true"
+                RequiredError="Kategori wajib dipilih">
+                @foreach (var cat in Categories)
+                {
+                    <MudSelectItem Value="@cat.Id">@cat.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudDatePicker Label="Tanggal Jadwal" Date="@_selectedDate" DateChanged="OnDateChanged" Required="true"
+                MinDate="@DateTime.Today" />
+
+            <MudTimePicker Label="Waktu Jadwal" Value="@_selectedTime" ValueChanged="OnTimeChanged" AmPm="false"
+                MinuteInterval="5" />
+
+            <MudNumericField T="int" Label="Slot Tersedia" @bind-Value="_newCourse.AvailableSlot" Min="1"
+                Required="true" RequiredError="Slot wajib diisi" />
+
+            <MudItem>
+                <MudText Typo="Typo.body2">Upload Gambar</MudText>
+                <InputFile OnChange="OnFileSelected" accept="image/*" />
+                @if (_selectedFile != null)
+                {
+                    <MudText Typo="Typo.caption">File: @_selectedFile.Name (@(_selectedFile.Size / 1024) KB)</MudText>
+                }
+            </MudItem>
+
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Color="Color.Secondary">
+            Batal
+        </MudButton>
+        <MudButton OnClick="SubmitAsync" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_isFormValid)">
+            Simpan
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] private CourseService CourseService { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter] public List<CategoryDto> Categories { get; set; } = new();
+
+    private MudForm? _form;
+    private bool _isFormValid;
+
+    private CreateCourseDto _newCourse = new()
+    {
+        ScheduleDate = DateTime.Today.AddHours(9)
+    };
+
+    private IBrowserFile? _selectedFile;
+
+    private DateTime? _selectedDate = DateTime.Today;
+    private TimeSpan _selectedTime = new(9, 0, 0);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+    }
+
+    private void OnDateChanged(DateTime? newDate)
+    {
+        if (newDate.HasValue)
+        {
+            var current = _newCourse.ScheduleDate ?? DateTime.Now;
+
+            _selectedDate = newDate.Value;
+            _newCourse.ScheduleDate = new DateTime(
+            newDate.Value.Year,
+            newDate.Value.Month,
+            newDate.Value.Day,
+            current.Hour,
+            current.Minute,
+            0,
+            DateTimeKind.Local
+            );
+        }
+    }
+
+    private void OnTimeChanged(TimeSpan newTime)
+    {
+        _selectedTime = newTime;
+
+        var current = _newCourse.ScheduleDate ?? DateTime.Now;
+        _newCourse.ScheduleDate = new DateTime(
+        current.Year,
+        current.Month,
+        current.Day,
+        newTime.Hours,
+        newTime.Minutes,
+        0,
+        DateTimeKind.Local
+        );
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_form is null)
+            return;
+
+        await _form.Validate();
+        if (!_isFormValid)
+        {
+            Snackbar.Add("Periksa kembali form Anda.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // Pastikan nilai akhir digabung dari date & time
+            if (_selectedDate.HasValue)
+                _newCourse.ScheduleDate = _selectedDate.Value.Date + _selectedTime;
+
+            var result = await CourseService.AddCourseAsync(_newCourse, _selectedFile);
+            if (result)
+            {
+                Snackbar.Add("Course berhasil ditambahkan.", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Gagal menambahkan course.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Terjadi kesalahan: {ex.Message}", Severity.Error);
+        }
+    }
+}

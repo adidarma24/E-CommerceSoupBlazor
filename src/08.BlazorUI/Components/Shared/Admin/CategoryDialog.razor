@@ -1,0 +1,86 @@
+@using MyApp.BlazorUI.Models
+@using MyApp.BlazorUI.DTOs
+@inject ISnackbar Snackbar
+@using Microsoft.AspNetCore.Components.Forms
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+
+        <MudForm @ref="form" @bind-IsValid="isValid">
+
+            @if (isEdit)
+            {
+                <MudTextField @bind-Value="updateModel.Name" Label="Nama Kategori" Required="true"
+                    RequiredError="Nama wajib diisi" />
+
+                <MudTextField @bind-Value="updateModel.Description" Label="Deskripsi (opsional)" />
+
+                <InputFile OnChange="OnFileSelected" />
+            }
+            else
+            {
+                <MudTextField @bind-Value="createModel.Name" Label="Nama Kategori" Required="true"
+                    RequiredError="Nama wajib diisi" />
+
+                <MudTextField @bind-Value="createModel.Description" Label="Deskripsi (opsional)" />
+
+                <InputFile OnChange="OnFileSelected" />
+            }
+
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="SaveAsync">Simpan</MudButton>
+        <MudButton Color="Color.Secondary" OnClick="Cancel">Batal</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Tambah Kategori";
+    [Parameter] public CategoryDto? Category { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private CreateCategoryDto createModel = new();
+    private UpdateCategoryDto updateModel = new();
+    private bool isEdit => Category != null;
+
+    private MudForm? form;
+    private bool isValid;
+
+    protected override void OnInitialized()
+    {
+        if (isEdit && Category != null)
+        {
+            updateModel.Name = Category.Name;
+            updateModel.Description = Category.Description;
+            Title = "Edit Kategori";
+        }
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        if (isEdit)
+            updateModel.ImageFile = e.File;
+        else
+            createModel.ImageFile = e.File;
+    }
+
+    private async Task SaveAsync()
+    {
+        await form!.Validate();
+        if (!isValid)
+        {
+            Snackbar.Add("⚠️ Mohon lengkapi data yang wajib diisi.", Severity.Warning);
+            return;
+        }
+
+        if (isEdit)
+            MudDialog.Close(DialogResult.Ok(updateModel));
+        else
+            MudDialog.Close(DialogResult.Ok(createModel));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}
