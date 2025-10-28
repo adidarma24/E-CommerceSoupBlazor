@@ -132,18 +132,17 @@
         // Delay sebentar biar snackbar sempat muncul
         await Task.Delay(1000);
 
-        Navigation.NavigateTo("/?login=success");
+        Navigation.NavigateTo("/");
       }
       else
       {
-        loginError = result.Message ?? "Login gagal.";
+        loginError = result.Message;
         Console.WriteLine($"❌ Login failed: {loginError}");
-        Snackbar.Add(loginError, Severity.Error);
       }
     }
     catch (Exception ex)
     {
-      loginError = $"Server error: {ex}";
+      loginError = $"Server error";
       Console.WriteLine($"💥 Exception saat login: {ex.Message}");
       Snackbar.Add("Something Wrong in the server, Please try again later", Severity.Error);
     }

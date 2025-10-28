@@ -72,7 +72,7 @@ namespace MyApp.BlazorUI.Services
       }
       catch (InvalidOperationException ex)
       {
-        Console.WriteLine($"⚠️ LocalStorage belum siap (interop error). {ex.Message}");
+        // Console.WriteLine($"⚠️ LocalStorage belum siap (interop error). {ex.Message}");
       }
 
 
