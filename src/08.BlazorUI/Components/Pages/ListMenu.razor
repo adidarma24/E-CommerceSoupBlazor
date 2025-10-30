@@ -9,17 +9,18 @@
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-0">
 
-    <MudItem Style="width:100%;" Class="mb-6" Elevation="0">
-        <MudImage Src="/images/hero.svg" Alt="@($"{CategoryName} Food")" Class="object-contain"
-            Style="height:auto; width:100%" />
-    </MudItem>
+    <section class="hero-wrapper">
+        <div class="hero-image-container">
+            <img src="@categoryImageUrl" alt="@($"{CategoryName} Food")" class="hero-image" />
+        </div>
 
-    <MudPaper Elevation="1" Class="pa-4 pa-md-10 mb-8">
-        <MudText Typo="Typo.h5" Class="fw-bold">@CategoryName</MudText>
-        <MudText Typo="Typo.body1" Class="mt-2 text-secondary">
-            @categoryDescription
-        </MudText>
-    </MudPaper>
+        <MudPaper Elevation="1" Class="pa-4 pa-md-10 mb-8">
+            <MudText Typo="Typo.h5" Class="fw-bold">@CategoryName</MudText>
+            <MudText Typo="Typo.body1" Class="mt-8 text-secondary">
+                @categoryDescription
+            </MudText>
+        </MudPaper>
+    </section>
 
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-3 my-20 pb-10">
 
@@ -66,6 +67,7 @@
 @code {
     [Parameter]
     public string CategoryName { get; set; }
+    private string? categoryImageUrl = "/images/hero.svg";
 
     @* PERUBAHAN: Definisi record disamakan dengan Landingpage.razor (Image, Title) *@
     public record Menu(int Id, string Image, string Category, string Title, string Price);
@@ -117,13 +119,21 @@
             {
                 var matchingCategory = categoryResponse.Data
                 .FirstOrDefault(cat => cat.Name.Equals(CategoryName, StringComparison.OrdinalIgnoreCase));
+
                 if (matchingCategory != null)
                 {
                     categoryDescription = matchingCategory.Description;
+
+                    // Ambil image dari API Category
+                    if (!string.IsNullOrEmpty(matchingCategory.Image))
+                        categoryImageUrl = $"{_apiBaseUrl}/{matchingCategory.Image.TrimStart('/')}";
+                    else
+                        categoryImageUrl = "/images/hero.svg"; // fallback image
                 }
                 else
                 {
                     categoryDescription = $"Deskripsi untuk {CategoryName} tidak ditemukan.";
+                    categoryImageUrl = "/images/hero.svg";
                 }
             }
         }
@@ -159,5 +169,53 @@
         width: 100%;
         margin: auto;
         height: 100%;
+    }
+
+    .hero-wrapper {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        margin-bottom: 60px;
+    }
+
+    .hero-image-container {
+        width: 100%;
+        height: 420px;
+        overflow: hidden;
+    }
+
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        transition: transform 3s ease;
+    }
+
+    .hero-image:hover {
+        transform: scale(1.05);
+    }
+
+    .hero-content {
+        background: #fff;
+        text-align: center;
+        padding: 2.5rem 2rem;
+        max-width: 900px;
+        margin: -80px auto 0 auto;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+    }
+
+    .hero-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2b2b2b;
+        margin-bottom: 12px;
+    }
+
+    .hero-description {
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.6;
     }
 </style>
