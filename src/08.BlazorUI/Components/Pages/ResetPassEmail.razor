@@ -92,20 +92,17 @@
       {
         ForgotError = result.Message;
         Console.WriteLine("✅ Password reset link sent.");
-        Snackbar.Add("✅ A password reset link has been sent to your email.", Severity.Success);
 
         await Task.Delay(1500);
       }
       else
       {
         ForgotError = result.Message;
-        Snackbar.Add("💥 Server error occurred. Please try again later.", Severity.Error);
       }
     }
     catch
     {
-      ForgotError = $"Server error";
-      Snackbar.Add("💥 Server error occurred. Please try again later.", Severity.Error);
+      ForgotError = $"Server error occurred. Please try again later.";
     }
     finally
     {

@@ -87,14 +87,16 @@
 
   private async Task CheckTokenAsync()
   {
+    if (_isDisposed) return;
+
     try
     {
       // 🔑 Retrieve tokens from local storage
-      var accessToken = await _localStorage.GetItemAsync<string>("accessToken");
-      var refreshToken = await _localStorage.GetItemAsync<string>("refreshToken");
-      var expiresAtString = await _localStorage.GetItemAsync<string>("expiresAt");
+      var accessToken = await SafeGetLocalStorageItemAsync("accessToken");
+      var refreshToken = await SafeGetLocalStorageItemAsync("refreshToken");
+      var expiresAtString = await SafeGetLocalStorageItemAsync("expiresAt");
 
-      if (_isDisposed) return; // Prevent after circuit is closed
+      if (_isDisposed) return;
 
       // 🚫 Basic missing check
       if (string.IsNullOrWhiteSpace(accessToken) ||
@@ -158,6 +160,11 @@
         Console.WriteLine($"🟢 Access token valid until {accessValidation.Expiry:O}");
       }
     }
+    catch (JSDisconnectedException)
+    {
+      Console.WriteLine("⚠️ JS interop failed: circuit disconnected (ignored safely).");
+      StopTokenCheckTimer();
+    }
     catch (Exception ex)
     {
       Console.WriteLine($"⚠️ Token check error: {ex.Message}");
@@ -167,6 +174,25 @@
       }
 
       StopTokenCheckTimer();
+    }
+  }
+
+  private async Task<string?> SafeGetLocalStorageItemAsync(string key)
+  {
+    try
+    {
+      if (_isDisposed) return null;
+      return await _localStorage.GetItemAsync<string>(key);
+    }
+    catch (JSDisconnectedException)
+    {
+      Console.WriteLine($"⚠️ Cannot access localStorage: circuit disconnected (key: {key}).");
+      return null;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"⚠️ Error reading localStorage for {key}: {ex.Message}");
+      return null;
     }
   }
 
@@ -181,6 +207,11 @@
     {
       await AuthService.LogoutAsync();
     }
+    catch (JSDisconnectedException)
+    {
+      Console.WriteLine("⚠️ Logout failed: circuit disconnected (ignored).");
+      return;
+    }
     catch (Exception ex)
     {
       Console.WriteLine($"⚠️ Logout API failed: {ex.Message}");
@@ -188,20 +219,19 @@
 
     if (_isDisposed) return;
 
-    await _localStorage.RemoveItemAsync("accessToken");
-    await _localStorage.RemoveItemAsync("refreshToken");
-    await _localStorage.RemoveItemAsync("expiresAt");
-
-    StopTokenCheckTimer();
-
     try
     {
+      await _localStorage.RemoveItemAsync("accessToken");
+      await _localStorage.RemoveItemAsync("refreshToken");
+      await _localStorage.RemoveItemAsync("expiresAt");
       await InvokeAsync(StateHasChanged);
     }
-    catch (Exception ex)
+    catch (JSDisconnectedException)
     {
-      Console.WriteLine($"⚠️ UI update failed: {ex.Message}");
+      Console.WriteLine("⚠️ LocalStorage cleanup failed: circuit disconnected (ignored).");
     }
+
+    StopTokenCheckTimer();
   }
 
   private void StopTokenCheckTimer()
@@ -217,6 +247,7 @@
 
   public void Dispose()
   {
+    if (_isDisposed) return;
     _isDisposed = true;
     StopTokenCheckTimer();
     Console.WriteLine("🧹 MainLayout disposed, timer stopped.");

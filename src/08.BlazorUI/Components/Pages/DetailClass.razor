@@ -1,6 +1,14 @@
 @page "/menu/detail/{Id:int}"
 
 @using MudBlazor
+@using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components
+@using System.ComponentModel.DataAnnotations
+@using System.Net.Http.Json
+@using System.Text.Json;
+@using MyApp.BlazorUI.Components.Shared
+@using MyApp.BlazorUI.Services.Interfaces
+@using MyApp.BlazorUI.DTOs.Auth
 @using MyApp.BlazorUI.DTOs
 @using System.Globalization
 @inject HttpClient Http
@@ -8,6 +16,11 @@
 @inject NavigationManager NavManager
 @inject MyApp.BlazorUI.Services.CartService CartService
 @inject ISnackbar Snackbar
+@inject IAuthService AuthService
+@inject IDialogService DialogService
+@inject ILocalStorageService LocalStorage
+@inject MyApp.BlazorUI.Services.InvoiceService InvoiceService
+
 
 @if (isLoading)
 {
@@ -70,8 +83,16 @@ else
           </MudButton>
 
           <MudButton Class="rounded-lg button button-filled" Style="width: 14.5rem;" Variant="Variant.Filled"
-            DropShadow="false" Disabled="@(selectedScheduleId == 0)" @onclick="BuyNow">
-            Buy Now
+            DropShadow="false" Disabled="@(isProcessingPayment || selectedScheduleId == 0)" @onclick="BuyNow">
+            @if (isProcessingPayment)
+            {
+              <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" />
+              <text>Processing...</text>
+            }
+            else
+            {
+              <text>Buy Now</text>
+            }
           </MudButton>
         </MudItem>
       </MudPaper>
@@ -117,6 +138,8 @@ else
 @code {
   [Parameter]
   public int Id { get; set; }
+  private bool isProcessingPayment = false;
+  string? token = null;
 
   private MenuCourseDto? course;
   private bool isLoading = true;
@@ -131,6 +154,21 @@ else
 
   public record OtherMenu(int Id, string Category, string Name, string Price, string ImageUrl);
   private List<OtherMenu> OtherMenuItems = new List<OtherMenu>();
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (!firstRender)
+      return;
+
+    try
+    {
+      token = await LocalStorage.GetItemAsync<string>(key: "accessToken");
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine("⚠️ LocalStorage belum siap atau tidak tersedia: " + ex.Message);
+    }
+  }
 
   protected override async Task OnParametersSetAsync()
   {
@@ -177,6 +215,8 @@ else
       {
         AvailableSchedules = scheduleResponse.Data
         .Where(s => s.ScheduleDate.Date >= DateTime.Today)
+        .Where(s => s.AvailableSlot > 0)
+        .Where(s => s.Status == "Active")
         .OrderBy(s => s.ScheduleDate)
         .ToList();
       }
@@ -242,7 +282,7 @@ else
     // 1. Validasi apakah jadwal sudah dipilih
     if (selectedScheduleId == 0)
     {
-      Snackbar.Add("Silakan pilih jadwal terlebih dahulu.", Severity.Warning);
+      Snackbar.Add("Please select a schedule first.", Severity.Warning);
       return false;
     }
 
@@ -250,7 +290,7 @@ else
     var selectedSchedule = AvailableSchedules.FirstOrDefault(s => s.Id == selectedScheduleId);
     if (selectedSchedule == null)
     {
-      Snackbar.Add("Jadwal yang dipilih tidak valid.", Severity.Error);
+      Snackbar.Add("The selected schedule is invalid.", Severity.Error);
       return false;
     }
 
@@ -272,13 +312,13 @@ else
     try
     {
       CartService.AddItem(newItem);
-      Snackbar.Add($"{course.Name} telah ditambahkan ke keranjang.", Severity.Success);
+      Snackbar.Add($"{course.Name} added to cart.", Severity.Success);
       return true;
     }
     catch (Exception ex)
     {
       // Tangani jika ada error (misal: item sudah ada, dari logika service Anda)
-      Snackbar.Add($"Gagal menambahkan: {ex.Message}", Severity.Error);
+      Snackbar.Add($"Failed to add: {ex.Message}", Severity.Error);
       return false;
     }
   }
@@ -286,16 +326,99 @@ else
   /**
   * @brief Menambahkan item ke keranjang lalu langsung mengarahkan ke halaman checkout.
 */
-  private void BuyNow()
+  private async void BuyNow()
   {
-    // 1. Coba tambahkan ke keranjang (panggil method internal)
-    bool addedSuccessfully = AddToCartInternal();
+    await ShowPaymentDialog();
+  }
 
-    // 2. Jika berhasil, navigasi ke halaman checkout
-    if (addedSuccessfully)
+  private async Task ShowPaymentDialog()
+  {
+    var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+    var dialog = DialogService.Show<PaymentMethod>("Select Payment Method", options);
+    var result = await dialog.Result;
+
+    // 3. Cek hasil dialog
+    if (!result.Canceled && result.Data != null)
     {
-      NavManager.NavigateTo("/checkout");
+      // Pengguna memilih metode, lanjutkan ke proses pembayaran
+      int selectedPaymentId = (int)result.Data;
+      await ProcessPayment();
     }
-    // Jika gagal, AddToCartInternal() sudah menampilkan Snackbar error.
+    else
+    {
+      // Pengguna menekan "Cancel"
+      Snackbar.Add("Payment canceled.", Severity.Info);
+    }
+  }
+
+  /**
+  * @brief Langkah 2: Proses pembayaran setelah metode dipilih.
+*/
+  private async Task ProcessPayment()
+  {
+    isProcessingPayment = true;
+    await InvokeAsync(StateHasChanged);
+
+    List<int> selectedMSId = new List<int>();
+    selectedMSId.Add(selectedScheduleId);
+
+    // 1. Buat Data Request untuk API
+    var createInvoiceRequest = new CreateInvoiceDTO()
+    {
+      MSId = selectedMSId
+    };
+
+    // 2. Panggil API Backend
+    try
+    {
+      if (!string.IsNullOrWhiteSpace(token))
+      {
+        Console.WriteLine("🔑 Token ditemukan, ambil data invoice...");
+
+        var response = await InvoiceService.CreateinvoiceAsync(createInvoiceRequest, token);
+
+        // if create invoice success
+        if (response.Success)
+        {
+          Console.WriteLine($"📦 Invoice berhasil dibuat. {response}");
+
+          NavManager.NavigateTo($"/purchase-success");
+        }
+
+        // if create invoice failed
+        else if (!response.Success && response.Data is JsonElement details)
+        {
+          // Try to navigate into "courses" array
+          if (details.TryGetProperty("courses", out var coursesElement) && coursesElement.ValueKind == JsonValueKind.Array)
+          {
+            var courseNames = coursesElement
+            .EnumerateArray()
+            .Select(c => c.GetProperty("courseName").GetString())
+            .Where(name => !string.IsNullOrWhiteSpace(name));
+
+            var joinedNames = string.Join(", ", courseNames);
+
+            Snackbar.Add($"This course has already been puchased: {joinedNames}", Severity.Error);
+          }
+        }
+        else
+        {
+          Snackbar.Add(response.Message, Severity.Error);
+        }
+      }
+      else
+      {
+        Console.WriteLine("🚫 Token tidak tersedia: skip membuat invoice.");
+        Snackbar.Add("You must to login first to purchase a course", Severity.Warning);
+      }
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Create invoice gagal: {ex.Message}");
+    }
+    finally
+    {
+      isProcessingPayment = false;
+    }
   }
 }
