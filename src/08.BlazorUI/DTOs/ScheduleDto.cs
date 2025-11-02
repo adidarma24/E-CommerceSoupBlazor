@@ -6,4 +6,14 @@ namespace MyApp.BlazorUI.DTOs
         public int AvailableSlot { get; set; }
         public DateTimeOffset ScheduleDate { get; set; }
     }
+
+    public class CreateScheduleDto
+    {
+        public DateTimeOffset ScheduleDate { get; set; }
+    }
+
+    public class UpdateScheduleDto
+    {
+        public DateTimeOffset ScheduleDate { get; set; }
+    }
 }
