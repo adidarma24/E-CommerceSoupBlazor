@@ -1,0 +1,110 @@
+@using MyApp.BlazorUI.DTOs
+@using MyApp.BlazorUI.Services
+@inject ScheduleService ScheduleService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Add Schedule for @CourseName</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="_isValid">
+            <MudPaper Elevation="0" Class="d-flex flex-column gap-4">
+
+                <MudDatePicker Label="Schedule Date" Date="_selectedDate" Required="true"
+                    RequiredError="Tanggal wajib diisi" />
+
+                <MudTimePicker Label="Schedule Time" @bind-Time="_selectedTime" AmPm="false" MinuteInterval="5"
+                    Required="true" RequiredError="Jam wajib diisi" />
+
+                <MudNumericField T="int" @bind-Value="_availableSlot" Label="Available Slot" Min="1" Required="true"
+                    RequiredError="Available slot wajib diisi" />
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <MudText Color="Color.Error">@_error</MudText>
+                }
+
+            </MudPaper>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined">Cancel</MudButton>
+        <MudButton OnClick="SubmitAsync" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_isValid)">
+            Submit
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int CourseId { get; set; }
+    [Parameter] public string CourseName { get; set; } = string.Empty;
+
+    private MudForm? form;
+    private bool _isValid;
+    private string _error = string.Empty;
+
+    private DateTime? _selectedDate = DateTime.Today;
+    private TimeSpan? _selectedTime = new(9, 0, 0);
+    private int _availableSlot = 1;
+
+    private async Task SubmitAsync()
+    {
+        _error = string.Empty;
+        await form!.Validate();
+        StateHasChanged();
+
+        if (!_isValid)
+        {
+            Snackbar.Add("⚠️ Periksa kembali form Anda.", Severity.Warning);
+            return;
+        }
+
+        if (CourseId <= 0)
+        {
+            _error = "Course ID tidak valid.";
+            Snackbar.Add(_error, Severity.Error);
+            return;
+        }
+
+        if (!_selectedDate.HasValue)
+        {
+            _error = "Tanggal wajib diisi.";
+            Snackbar.Add(_error, Severity.Error);
+            return;
+        }
+
+        var time = _selectedTime ?? new TimeSpan(9, 0, 0);
+
+        // Gabungkan tanggal dan jam ke format WIB (+07:00)
+        var combined = new DateTimeOffset(
+        _selectedDate.Value.Year,
+        _selectedDate.Value.Month,
+        _selectedDate.Value.Day,
+        time.Hours,
+        time.Minutes,
+        0,
+        TimeSpan.FromHours(7)
+        );
+
+        Console.WriteLine($"DEBUG SEND AddSchedule: {combined}");
+
+        var result = await ScheduleService.AddScheduleAsync(CourseId, combined, _availableSlot);
+
+        if (result != null && result.Success)
+        {
+            Snackbar.Add(result.Message ?? "✅ Schedule added successfully!", Severity.Success);
+            await InvokeAsync(() => MudDialog.Close(DialogResult.Ok(true))); // trigger refresh di parent
+        }
+        else
+        {
+            _error = result?.Message ?? "❌ Failed to add schedule.";
+            Snackbar.Add(_error, Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

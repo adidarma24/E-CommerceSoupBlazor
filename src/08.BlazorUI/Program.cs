@@ -46,6 +46,7 @@ builder.Services.AddScoped<MyClassServices>();
 builder.Services.AddScoped<CourseService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<ScheduleService>();
 builder.Services.AddScoped<ProfileTokenService>();
 
 // ==============================================

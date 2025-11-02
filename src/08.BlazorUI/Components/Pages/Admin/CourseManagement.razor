@@ -5,6 +5,7 @@
 @using MyApp.BlazorUI.Components.Shared
 @using MyApp.BlazorUI.Components.Shared.Admin
 
+@inject NavigationManager NavigationManager
 @inject CourseService CourseService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -12,54 +13,65 @@
 <PageTitle>Course Management</PageTitle>
 
 <MudPaper Class="course-container" Elevation="1">
+    <!-- Header Section -->
     <div class="header-section">
         <MudText Typo="Typo.h5" Class="title">Course Management</MudText>
-        <MudButton OnClick="OpenDialogAddCourseAsync" Variant="Variant.Filled" Class="btn-add">
-            <MudIcon Icon="@Icons.Material.Filled.Add" /> Add Course
+
+        <MudButton OnClick="OpenDialogAddCourseAsync" Variant="Variant.Filled" Color="Color.Success"
+            StartIcon="@Icons.Material.Filled.Add">
+            Add Course
         </MudButton>
     </div>
 
-    <div class="course-table">
+    <!-- Table Section -->
+    <div class="table-wrapper">
         <MudTable Items="@Courses" FixedHeader="true" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading"
-            LoadingProgressColor="Color.Info" Elevation="0" RowsPerPage="5">
+            LoadingProgressColor="Color.Info" Elevation="0" RowsPerPage="5" Class="course-table">
+
             <HeaderContent>
-                <MudTh class="t">Name</MudTh>
-                <MudTh class="t">Image</MudTh>
-                <MudTh class="t">Price</MudTh>
-                <MudTh class="t">Description</MudTh>
-                <MudTh class="t">Category</MudTh>
-                <MudTh class="t">Schedule</MudTh>
-                <MudTh class="t">Available Slot</MudTh>
-                <MudTh class="t">Action</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Image</MudTh>
+                <MudTh>Price</MudTh>
+                <MudTh>Description</MudTh>
+                <MudTh>Category</MudTh>
+                <MudTh>Action</MudTh>
             </HeaderContent>
 
             <RowTemplate>
-                <MudTd class="t">@context.Name</MudTd>
-                <MudTd class="t">
+                <MudTd>@context.Name</MudTd>
+
+                <MudTd>
                     @if (!string.IsNullOrEmpty(context.ImageUrl))
                     {
-                        <MudImage Src="@CourseService.GetFullImageUrl(context.ImageUrl)" Width="40" Height="40" />
+                        <MudImage Src="@CourseService.GetFullImageUrl(context.ImageUrl)" Width="40" Height="40"
+                            Class="rounded-image" />
                     }
                 </MudTd>
-                <MudTd class="t">@("IDR " + context.Price.ToString("N0", new System.Globalization.CultureInfo("id-ID")))
-                </MudTd>
-                <MudTd class="t">@context.Description</MudTd>
-                <MudTd class="t">@context.CategoryName</MudTd>
-                <MudTd class="t">@context.Schedule</MudTd>
-                <MudTd class="t">@context.AvailableSlot</MudTd>
-                <MudTd class="t gap-2">
-                    <MudButton Variant="Variant.Filled" Class="btn-edit"
-                        OnClick="@(() => OpenDialogEditCourseAsync(context))">Edit</MudButton>
-                    <MudButton Variant="Variant.Filled" Class="btn-delete"
-                        OnClick="@(() => OnDeleteCourseAsync(context.Id, context.ScheduleAssignmentId, context.ScheduleId))">
-                        Delete
-                    </MudButton>
 
+                <MudTd>@($"IDR {context.Price:N0}")</MudTd>
+                <MudTd>@context.Description</MudTd>
+                <MudTd>@context.CategoryName</MudTd>
+
+                <MudTd Class="action-buttons">
+                    <MudTooltip Text="Edit Course">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Medium"
+                            OnClick="@(() => OpenDialogEditCourseAsync(context))" />
+                    </MudTooltip>
+
+                    <MudTooltip Text="Hapus Course">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Medium"
+                            OnClick="@(() => OnDeleteCourseAsync(context.Id))" />
+                    </MudTooltip>
+
+                    <MudTooltip Text="Kelola Jadwal Course">
+                        <MudIconButton Icon="@Icons.Material.Filled.Schedule" Color="Color.Primary" Size="Size.Medium"
+                            OnClick="@(() => NavigateToSchedulePage(context.Id))" />
+                    </MudTooltip>
                 </MudTd>
             </RowTemplate>
 
             <PagerContent>
-                <MudTablePager PageSizeOptions="new int[] { 5, 10, 25, 50, 100, int.MaxValue }" />
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 25, 50, 100 }" />
             </PagerContent>
         </MudTable>
     </div>
@@ -71,9 +83,7 @@
     private List<CategoryDto> Categories = new();
 
     protected override async Task OnInitializedAsync()
-    {
-        await LoadInitialDataAsync();
-    }
+    => await LoadInitialDataAsync();
 
     private async Task LoadInitialDataAsync()
     {
@@ -97,7 +107,7 @@
         try
         {
             Courses = await CourseService.GetCoursesAsync() ?? new();
-            if (Courses.Count == 0)
+            if (!Courses.Any())
                 Snackbar.Add("Tidak ada data course ditemukan.", Severity.Info);
         }
         catch (Exception ex)
@@ -118,13 +128,12 @@
         }
     }
 
+    private void NavigateToSchedulePage(int courseId)
+    => NavigationManager.NavigateTo($"/admin-course/{courseId}/schedule");
+
     private async Task OpenDialogAddCourseAsync()
     {
-        var parameters = new DialogParameters
-        {
-            ["Categories"] = Categories
-        };
-
+        var parameters = new DialogParameters { ["Categories"] = Categories };
         var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium };
 
         var dialog = DialogService.Show<AddCourseDialog>("Tambah Course", parameters, options);
@@ -132,37 +141,27 @@
 
         if (!result.Canceled)
         {
-            // 🔹 Ambil course baru dari API, tapi hanya tambahkan ke list tanpa reset urutan
             var newCourses = await CourseService.GetCoursesAsync();
+            var latest = newCourses?.Where(nc => !Courses.Any(c => c.Id == nc.Id)).ToList();
 
-            // 🔹 Cari course baru yang belum ada di list sekarang
-            var latest = newCourses
-            .Where(nc => !Courses.Any(c => c.Id == nc.Id))
-            .ToList();
-
-            if (latest.Any())
-            {
-                // 🔹 Tambahkan ke akhir list agar tidak di atas
+            if (latest?.Any() == true)
                 Courses.AddRange(latest);
-            }
 
-            Snackbar.Add("Course baru berhasil ditambahkan dan ditampilkan.", Severity.Success);
+            Snackbar.Add("✅ Course baru berhasil ditambahkan.", Severity.Success);
         }
     }
-
-
 
     private async Task OpenDialogEditCourseAsync(CourseModel course)
     {
         var parameters = new DialogParameters
-{
-{ "Categories", Categories },
-{ "CourseToEdit", course }
-};
+        {
+            ["Categories"] = Categories,
+            ["CourseToEdit"] = course
+        };
 
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-        var dialog = await DialogService.ShowAsync<EditCourseDialog>("Edit Course", parameters: parameters, options: options);
+        var dialog = await DialogService.ShowAsync<EditCourseDialog>("Edit Course", parameters, options);
         var result = await dialog.Result;
 
         if (result?.Data is true)
@@ -172,20 +171,20 @@
         }
     }
 
-    private async Task OnDeleteCourseAsync(int courseId, int? scheduleAssignmentId, int? scheduleId)
+    private async Task OnDeleteCourseAsync(int courseId)
     {
         bool? confirmed = await DialogService.ShowMessageBox(
         "Konfirmasi Hapus",
-        "Apakah Anda yakin ingin menghapus course ini beserta jadwalnya?",
+        "Apakah Anda yakin ingin menghapus course ini?",
         yesText: "Ya, Hapus",
         cancelText: "Batal");
 
         if (confirmed == true)
         {
-            var success = await CourseService.DeleteCourseWithScheduleAsync(courseId, scheduleAssignmentId, scheduleId);
+            var success = await CourseService.DeleteCourseAsync(courseId);
             if (success)
             {
-                Snackbar.Add("🗑️ Course dan jadwal terkait berhasil dihapus.", Severity.Success);
+                Snackbar.Add("🗑️ Course berhasil dihapus.", Severity.Success);
                 await LoadCoursesAsync();
             }
             else
@@ -194,29 +193,28 @@
             }
         }
     }
-
-
 }
 
 <style>
     .course-container {
         padding: 1.5rem;
-        margin: 0;
-        width: 100%;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         height: calc(100vh - 5rem);
-        /* penuh tinggi layar, dikurangi navbar */
-        overflow-y: auto;
-        background-color: #fff;
-        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
     }
 
     .header-section {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.2rem;
         border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 0.5rem;
     }
 
     .title {
@@ -224,116 +222,61 @@
         color: #333;
     }
 
+    .table-wrapper {
+        flex: 1;
+        overflow-x: auto;
+    }
+
     .course-table {
-        max-height: 65vh;
-        overflow-y: auto;
-        border-radius: 10px;
-    }
-
-    .mud-table {
-        border-collapse: separate;
-        border-spacing: 0 6px;
-        /* jarak antar baris */
-    }
-
-    .mud-table-row {
-        background-color: #ffffff;
-        border-radius: 8px;
+        width: 100%;
+        min-width: 850px;
     }
 
     .mud-table-head th {
-        background-color: #eaffea !important;
+        background-color: #e8f5e9 !important;
         font-weight: 600;
+        color: #2e7d32;
         text-transform: uppercase;
-        color: #333;
         text-align: center;
-        vertical-align: middle;
-        padding: 0.75rem;
     }
 
-    .t {
+    .mud-table-cell {
         text-align: center;
         vertical-align: middle !important;
-        padding: 0.75rem;
-        white-space: normal;
-        word-wrap: break-word;
     }
 
-    /* Tombol Tambah */
-    .btn-add {
-        background-color: green;
-        color: white;
-        text-transform: none;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
+    .rounded-image {
         border-radius: 8px;
+        object-fit: cover;
+    }
+
+    .action-buttons {
         display: flex;
-        align-items: center;
-        gap: 0.3rem;
+        justify-content: center;
+        gap: 0.4rem;
     }
 
-    .btn-add:hover {
-        background-color: darkgreen;
-    }
-
-    /* Tombol Edit & Delete */
-    .btn-edit {
-        background-color: #fabc1d;
-        color: white;
-        text-transform: none;
-        margin-right: 0.4rem;
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-    }
-
-    .btn-edit:hover {
-        background-color: #e6a500;
-    }
-
-    .btn-delete {
-        background-color: red;
-        color: white;
-        text-transform: none;
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-    }
-
-    .btn-delete:hover {
-        background-color: darkred;
-    }
-
-    /* Tambahkan jarak antar tombol agar tidak berhimpit */
-    .mud-button {
-        margin: 0.1rem;
-    }
-
-    /* Agar tabel tidak menempel ke pinggir container */
-    .mud-table-container {
-        padding: 0 0.5rem;
-    }
-
-    /* Responsive layout di layar kecil */
+    /* RESPONSIVE */
     @@media (max-width: 768px) {
         .header-section {
             flex-direction: column;
             align-items: flex-start;
-            gap: 0.75rem;
         }
 
-        .btn-add {
-            align-self: stretch;
-            justify-content: center;
+        .title {
+            font-size: 1.1rem;
         }
 
-        .course-container {
-            padding: 1rem;
-            margin: 1rem;
+        .table-wrapper {
+            overflow-x: auto;
         }
 
-        .mud-table-head th,
-        .t {
-            font-size: 0.85rem;
-            padding: 0.5rem;
+        .course-table {
+            min-width: 100%;
+        }
+
+        .action-buttons {
+            justify-content: flex-start;
         }
     }
 </style>
