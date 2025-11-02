@@ -22,7 +22,7 @@ services:
   # Backend API
   api:
     build:
-      context: .
+      context: ./src/06.WebAPI
       dockerfile: Dockerfile
     container_name: api-app
     ports:
