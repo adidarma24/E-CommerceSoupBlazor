@@ -1,0 +1,136 @@
+@using MyApp.BlazorUI.DTOs
+@using MyApp.BlazorUI.Services
+@inject ScheduleService ScheduleService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Schedule for @CourseName</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="_isValid">
+            <MudPaper Elevation="0" Class="d-flex flex-column gap-4">
+
+                <MudDatePicker Label="Schedule Date" Date="_selectedDate" DateChanged="OnDateChanged" Required="true"
+                    RequiredError="Tanggal wajib diisi" />
+
+                <MudTimePicker Label="Schedule Time" @bind-Time="_selectedTime" AmPm="false" MinuteInterval="5"
+                    Required="true" RequiredError="Jam wajib diisi" />
+
+                <MudNumericField T="int" @bind-Value="_availableSlot" Label="Available Slot" Min="1" Required="true"
+                    RequiredError="Available slot wajib diisi" />
+                <MudSelect T="string" @bind-Value="_status" Label="Status" For="@(() => _status)" Style="height:2rem;">
+                    <MudSelectItem Value='@("Active")'>Active</MudSelectItem>
+                    <MudSelectItem Value='@("Inactive")'>Inactive</MudSelectItem>
+                </MudSelect>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <MudText Color="Color.Error">@_error</MudText>
+                }
+
+            </MudPaper>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined">Cancel</MudButton>
+        <MudButton OnClick="SubmitAsync" Variant="Variant.Filled" Color="Color.Success" Disabled="@(!_isValid)">
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ScheduleViewModel Editable { get; set; } = new();
+    [Parameter] public string CourseName { get; set; } = string.Empty;
+
+    private MudForm? form;
+    private bool _isValid;
+    private string _error = string.Empty;
+
+    private DateTime? _selectedDate;
+    private TimeSpan? _selectedTime;
+    private int _available_slot; // kept underscore for private field
+    private int _availableSlot
+    {
+        get => _available_slot;
+        set => _available_slot = value;
+    }
+    private string _status = "Active";
+
+    protected override void OnInitialized()
+    {
+        if (Editable != null)
+        {
+            // Convert scheduleDate to WIB local values for pickers
+            var localTime = Editable.ScheduleDate.ToOffset(TimeSpan.FromHours(7)); // WIB
+            _selectedDate = localTime.Date;
+            _selectedTime = localTime.TimeOfDay;
+            _availableSlot = Editable.AvailableSlot;
+            _status = Editable.Status ?? "Active";
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        _error = string.Empty;
+        await form!.Validate();
+
+        if (!_isValid)
+        {
+            Snackbar.Add("⚠️ Periksa kembali form Anda.", Severity.Warning);
+            return;
+        }
+
+        if (!_selectedDate.HasValue)
+        {
+            _error = "Tanggal wajib diisi.";
+            Snackbar.Add(_error, Severity.Error);
+            return;
+        }
+
+        // fallback time if user didn't touch it
+        var time = _selectedTime ?? new TimeSpan(9, 0, 0);
+
+        // Gabungkan tanggal dan waktu ke DateTimeOffset (WIB)
+        var combined = new DateTimeOffset(
+        _selectedDate.Value.Year,
+        _selectedDate.Value.Month,
+        _selectedDate.Value.Day,
+        time.Hours,
+        time.Minutes,
+        0,
+        TimeSpan.FromHours(7)
+        );
+
+        var dto = new UpdateMenuCourseScheduleDto
+        {
+            Id = Editable.Id,
+            ScheduleId = Editable.ScheduleId,
+            ScheduleDate = combined,
+            AvailableSlot = _availableSlot,
+            Status = _status
+        };
+
+        var response = await ScheduleService.UpdateScheduleAsync(dto);
+
+        Console.WriteLine($"DEBUG SEND DATE: {dto.ScheduleDate}");
+
+        if (response != null && response.Success)
+        {
+            Snackbar.Add(response.Message ?? "✅ Schedule berhasil diperbarui.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true)); // Tutup dialog dan trigger refresh
+        }
+        else
+        {
+            _error = response?.Message ?? "❌ Gagal memperbarui schedule.";
+            Snackbar.Add(_error, Severity.Error);
+        }
+    }
+
+    private void OnDateChanged(DateTime? date) => _selectedDate = date;
+    private void Cancel() => MudDialog.Cancel();
+}

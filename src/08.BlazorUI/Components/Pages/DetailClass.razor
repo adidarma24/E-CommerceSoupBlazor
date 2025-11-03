@@ -37,14 +37,13 @@ else if (course == null)
 }
 else
 {
-  <MudPaper Class="d-flex flex-column py-10 px-20" Elevation="0" Style="width: 100%">
-
-    <MudPaper Class="d-flex flex-row gap-4" Style="width: 100%" Elevation="0">
-      <MudImage Fluid="true" Src="@courseImageUrl" Width="400" Height="266" Alt="@course.Name" Elevation="25"
-        Class="rounded-none" ObjectFit="ObjectFit.Cover" />
-      <MudPaper Class="d-flex flex-column" Style="width: 100%;" Elevation="0">
+  <MudPaper Class="d-flex flex-column py-10 px-20" Elevation="0" Style="width: 100%;">
+    @* --- BAGIAN ATAS (GAMBAR + DETAIL) --- *@
+    <MudPaper Class="d-flex flex-row flex-wrap gap-4" Style="width: 100%;" Elevation="0">
+      <MudImage Fluid="true" Src="@courseImageUrl" Alt="@course.Name" Elevation="25" Class="rounded-none"
+        ObjectFit="ObjectFit.Cover" Style="width: 400px; height: 266px; max-width: 100%; flex: 0 0 auto;" />
+      <MudPaper Class="d-flex flex-column" Style="flex: 1 1 300px; width: 100%;" Elevation="0">
         <MudText Style="color:#828282" Typo="Typo.body1">@course.CategoryName</MudText>
-
         <MudText Style="color:black; font-weight:600;" Typo="Typo.h5">@course.Name</MudText>
         <MudText Style="color:#5B4947; font-weight:600;" Typo="Typo.h5">
           @("IDR " + course.Price.ToString("N0", idCulture))
@@ -59,8 +58,7 @@ else
           {
             @foreach (var schedule in AvailableSchedules)
             {
-              <MudSelectItem Value="@schedule.Id">@schedule.ScheduleDate.ToString("dddd, dd MMMM yyyy")
-              </MudSelectItem>
+              <MudSelectItem Value="@schedule.Id">@schedule.ScheduleDate.ToString("dddd, dd MMMM yyyy")</MudSelectItem>
             }
           }
           else
@@ -69,7 +67,7 @@ else
           }
         </MudSelect>
 
-        <MudItem class="d-flex flex-row gap-4 mt-4">
+        <div class="d-flex flex-wrap gap-4 mt-4">
           <MudButton Class="rounded-lg button button-outline" Style="width: 14.5rem;" Variant="Variant.Outlined"
             Disabled="@(selectedScheduleId == 0)" @onclick="AddToCart">
             Add to Cart
@@ -87,9 +85,11 @@ else
               <text>Buy Now</text>
             }
           </MudButton>
-        </MudItem>
+        </div>
       </MudPaper>
     </MudPaper>
+
+    @* --- DESKRIPSI --- *@
     <MudPaper Elevation="0" Class="d-flex flex-column mt-10 gap-4">
       <MudText Typo="Typo.h5" Style="font-weight:600">
         Description
@@ -102,20 +102,19 @@ else
 
   <MudDivider Class="my-2" Style="border-top: 2px solid rgba(0,0,0,0.77); width: 100%;" />
 
+  @* --- BAGIAN “ANOTHER MENU” --- *@
   <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-3 my-20 px-20">
-
     <MudText Typo="Typo.h5" Align="Align.Center" Class="fw-semibold mt-6 mb-6" Style="color:#5B4947;">
       Another menu in this class
     </MudText>
+
     <MudGrid Class="my-20" Gutter="3">
       @foreach (var item in OtherMenuItems)
       {
-
         <MudItem xs="12" sm="6" md="4" lg="4">
-          @* --- PERUBAHAN DI SINI --- *@
-          @* Markup kartu disamakan dengan Landingpage.razor *@
           <MudCard Elevation="1" @onclick="() => OnOtherMenuClick(item.Id)" Class="card-hover my-card-style">
-            <MudCardMedia Image="@item.Image" Height="200" Alt="@item.Title" />
+            <MudCardMedia Image="@item.Image" Height="300" Alt="@item.Title"
+              Style="object-fit: cover; object-position: center;" />
             <MudCardContent>
               <MudText Typo="Typo.caption" Class="text-grey">@item.Category</MudText>
               <MudText Typo="Typo.subtitle1" Class="font-weight-bold">@item.Title</MudText>
@@ -123,12 +122,12 @@ else
               <MudText Typo="Typo.body2" Color="Color.Warning" Class="font-weight-bold">@item.Price</MudText>
             </MudCardContent>
           </MudCard>
-          @* --- AKHIR PERUBAHAN --- *@
         </MudItem>
       }
     </MudGrid>
   </MudContainer>
 }
+
 
 @code {
   [Parameter]
@@ -144,8 +143,6 @@ else
   private List<MenuCourseScheduleDto> AvailableSchedules = new List<MenuCourseScheduleDto>();
   private int selectedScheduleId = 0;
 
-  @* --- PERUBAHAN DI SINI --- *@
-  @* Definisi record disamakan dengan Landingpage.razor (Image, Title) *@
   public record OtherMenu(int Id, string Image, string Category, string Title, string Price);
   private List<OtherMenu> OtherMenuItems = new List<OtherMenu>();
 
@@ -169,7 +166,7 @@ else
     isLoading = true;
     _apiBaseUrl = (Configuration["ApiBaseUrl"] ?? "http://localhost:5099").TrimEnd('/');
     AvailableSchedules.Clear();
-    selectedScheduleId = 0; // Reset ke 0 setiap kali halaman dimuat
+    selectedScheduleId = 0;
 
     try
     {
@@ -228,16 +225,14 @@ else
       var courseResponse = await Http.GetFromJsonAsync<ApiResponse<List<MenuCourseDto>>>("api/menucourses");
       if (courseResponse?.Success == true && courseResponse.Data != null)
       {
-        @* --- PERUBAHAN DI SINI --- *@
-        @* Logika .Select() disesuaikan dengan record OtherMenu baru *@
         OtherMenuItems = courseResponse.Data
         .Where(dto => dto.CategoryName.Equals(categoryName, StringComparison.OrdinalIgnoreCase) && dto.Id != currentMenuId)
         .Take(6)
         .Select(dto => new OtherMenu(
         dto.Id,
         string.IsNullOrEmpty(dto.Image) ? "" : $"{_apiBaseUrl}/{dto.Image.TrimStart('/')}", // Image
-        dto.CategoryName, // Category
-        dto.Name, // Title
+        dto.CategoryName,
+        dto.Name,
         "IDR " + dto.Price.ToString("N0", idCulture) // Price
         ))
         .ToList();
@@ -296,15 +291,10 @@ else
     }
     catch (Exception ex)
     {
-      // Tangani jika ada error (misal: item sudah ada, dari logika service Anda)
       Snackbar.Add($"Failed to add: {ex.Message}", Severity.Error);
       return false;
     }
   }
-
-  /**
-  * @brief Menambahkan item ke keranjang lalu langsung mengarahkan ke halaman checkout.
-*/
   private async void BuyNow()
   {
     await ShowPaymentDialog();
@@ -319,20 +309,15 @@ else
     // 3. Cek hasil dialog
     if (!result.Canceled && result.Data != null)
     {
-      // Pengguna memilih metode, lanjutkan ke proses pembayaran
       int selectedPaymentId = (int)result.Data;
       await ProcessPayment();
     }
     else
     {
-      // Pengguna menekan "Cancel"
       Snackbar.Add("Payment canceled.", Severity.Info);
     }
   }
 
-  /**
-  * @brief Langkah 2: Proses pembayaran setelah metode dipilih.
-*/
   private async Task ProcessPayment()
   {
     isProcessingPayment = true;
@@ -347,7 +332,6 @@ else
       MSId = selectedMSId
     };
 
-    // 2. Panggil API Backend
     try
     {
       if (!string.IsNullOrWhiteSpace(token))
@@ -356,7 +340,6 @@ else
 
         var response = await InvoiceService.CreateinvoiceAsync(createInvoiceRequest, token);
 
-        // if create invoice success
         if (response.Success)
         {
           Console.WriteLine($"📦 Invoice berhasil dibuat. {response}");
@@ -364,10 +347,8 @@ else
           NavManager.NavigateTo($"/purchase-success");
         }
 
-        // if create invoice failed
         else if (!response.Success && response.Data is JsonElement details)
         {
-          // Try to navigate into "courses" array
           if (details.TryGetProperty("courses", out var coursesElement) && coursesElement.ValueKind == JsonValueKind.Array)
           {
             var courseNames = coursesElement
@@ -398,12 +379,11 @@ else
     finally
     {
       isProcessingPayment = false;
+      StateHasChanged();
     }
   }
 }
 
-@* --- PERUBAHAN DI SINI --- *@
-@* Menambahkan style CSS yang diperlukan untuk card *@
 <style>
   .card-hover {
     cursor: pointer;

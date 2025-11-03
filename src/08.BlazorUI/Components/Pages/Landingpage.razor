@@ -58,9 +58,9 @@
       @foreach (FoodItem item in Foods.Skip((currentPage - 1) * pageSize).Take(pageSize))
       {
         <MudItem xs="12" sm="6" md="4">
-          @* UBAH OnCardClick UNTUK MENGGUNAKAN ID *@
           <MudCard Elevation="1" @onclick="() => OnCardClick(item)" Class="card-hover my-card-style">
-            <MudCardMedia Image="@item.Image" Height="250" Alt="@item.Title" />
+            <MudCardMedia Image="@item.Image" Height="250" Alt="@item.Title"
+              Style="object-fit: cover; object-position: center;" />
             <MudCardContent>
               <MudText Typo="Typo.caption" Class="text-grey">@item.Category</MudText>
               <MudText Typo="Typo.subtitle1" Class="font-weight-bold">@item.Title</MudText>

@@ -3,62 +3,68 @@
 @using MyApp.BlazorUI.Services
 @using Microsoft.AspNetCore.Components.Forms
 @using MyApp.BlazorUI.Components.Models
+@using System.Globalization
 
-<MudDialog>
+<MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
     <TitleContent>
         <MudText Typo="Typo.h6">Edit Course</MudText>
     </TitleContent>
 
     <DialogContent>
-        <MudForm @ref="_form" @bind-IsValid="_isFormValid">
-            <MudTextField T="string" Label="Nama Course" @bind-Value="_editCourse.Name" Required="true"
-                RequiredError="Nama wajib diisi" />
+        <MudPaper Elevation="0" Class="dialog-body">
+            <MudForm @ref="_form" @bind-IsValid="_isFormValid" ValidationDelay="100">
+                <div class="form-grid">
+                    <!-- Nama -->
+                    <MudTextField T="string" Label="Nama Course" @bind-Value="_editCourse.Name" Required="true"
+                        RequiredError="Nama wajib diisi" />
 
-            <MudTextField T="string" Label="Deskripsi" @bind-Value="_editCourse.Description" Lines="3" Required="true"
-                RequiredError="Deskripsi wajib diisi" />
+                    <!-- Deskripsi -->
+                    <MudTextField T="string" Label="Deskripsi" @bind-Value="_editCourse.Description" Lines="3"
+                        Required="true" RequiredError="Deskripsi wajib diisi" />
 
-            <MudNumericField T="decimal" Label="Harga" @bind-Value="_editCourse.Price" Required="true"
-                RequiredError="Harga wajib diisi" Adornment="Adornment.Start" AdornmentText="Rp" />
+                    <!-- Harga -->
+                    <MudNumericField T="decimal" Label="Harga" Value="_editCourse.Price"
+                        ValueChanged="val => _editCourse.Price = val" ValueExpression="@(() => _editCourse.Price)"
+                        Immediate="true" Adornment="Adornment.Start" AdornmentText="Rp" Required="true"
+                        RequiredError="Harga wajib diisi" Culture="@_idCulture" DecimalPlaces="0" />
 
-            <MudSelect T="int" Label="Kategori" @bind-Value="_editCourse.CategoryId" Required="true"
-                RequiredError="Kategori wajib dipilih">
-                @foreach (var cat in Categories)
-                {
-                    <MudSelectItem Value="@cat.Id">@cat.Name</MudSelectItem>
-                }
-            </MudSelect>
+                    <!-- Kategori -->
+                    <MudSelect T="int" Label="Kategori" @bind-Value="_editCourse.CategoryId" Required="true"
+                        RequiredError="Kategori wajib dipilih">
+                        @foreach (var cat in Categories)
+                        {
+                            <MudSelectItem Value="@cat.Id">@cat.Name</MudSelectItem>
+                        }
+                    </MudSelect>
 
-            <MudDatePicker Date="_selectedDate" DateChanged="OnDateChanged" Required="true" MinDate="@DateTime.Today" />
-
-            <MudTimePicker Time="_selectedTime"
-                TimeChanged="EventCallback.Factory.Create<TimeSpan?>(this, OnTimeChanged)" AmPm="false"
-                MinuteInterval="5" />
-
-            <MudNumericField T="int" Label="Slot Tersedia" @bind-Value="_editCourse.AvailableSlot" Min="1"
-                Required="true" RequiredError="Slot wajib diisi" />
-
-            <MudItem>
-                <MudText Typo="Typo.body2">Upload Gambar (opsional)</MudText>
-                <InputFile OnChange="OnFileSelected" accept="image/*" />
-                @if (_selectedFile != null)
-                {
-                    <MudText Typo="Typo.caption">File: @_selectedFile.Name (@(_selectedFile.Size / 1024) KB)</MudText>
-                }
-                else if (!string.IsNullOrEmpty(_imagePreview))
-                {
-                    <div style="margin-top:0.5rem;">
-                        <MudAvatar Size="Size.Medium" Image="@_imagePreview" />
+                    <!-- Upload Gambar & Preview -->
+                    <div class="file-section">
+                        <MudText Typo="Typo.body2">Upload Gambar (opsional)</MudText>
+                        <InputFile OnChange="OnFileSelected" accept="image/*" />
+                        @if (_selectedFile != null)
+                        {
+                            <MudText Typo="Typo.caption">File: @_selectedFile.Name (@(_selectedFile.Size / 1024) KB)
+                            </MudText>
+                        }
+                        else if (!string.IsNullOrEmpty(_imagePreview))
+                        {
+                            <div style="margin-top:0.5rem;">
+                                <MudAvatar Size="Size.Medium" Image="@_imagePreview" />
+                            </div>
+                        }
                     </div>
-                }
-            </MudItem>
-        </MudForm>
+                </div>
+            </MudForm>
+        </MudPaper>
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Color="Color.Secondary">Batal</MudButton>
-        <MudButton OnClick="SubmitAsync" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_isFormValid)">
-            Simpan Perubahan
-        </MudButton>
+        <div class="actions">
+            <MudButton OnClick="Cancel" Variant="Variant.Outlined" Color="Color.Secondary">Batal</MudButton>
+            <MudButton OnClick="SubmitAsync" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_isFormValid)">
+                Simpan Perubahan
+            </MudButton>
+        </div>
     </DialogActions>
 </MudDialog>
 
@@ -76,42 +82,19 @@
     private IBrowserFile? _selectedFile;
     private string? _imagePreview;
 
-    private DateTime? _selectedDate;
-    private TimeSpan _selectedTime;
-
-    private DateTime CreateLocalDateTime(DateTime date, TimeSpan time)
-    {
-        return DateTime.SpecifyKind(
-        new DateTime(date.Year, date.Month, date.Day, time.Hours, time.Minutes, 0),
-        DateTimeKind.Unspecified
-        );
-    }
+    // CultureInfo disiapkan di code-behind, agar atribut Razor tidak perlu escaping
+    private readonly CultureInfo _idCulture = new("id-ID");
 
     protected override void OnInitialized()
     {
+        // Isi DTO awal supaya field (termasuk numeric) langsung berisi value
         _editCourse = new CreateCourseDto
         {
             Name = CourseToEdit.Name,
             Description = CourseToEdit.Description,
             Price = CourseToEdit.Price,
-            CategoryId = CourseToEdit.CategoryId,
-            AvailableSlot = CourseToEdit.AvailableSlot,
-            ScheduleDate = CourseToEdit.ScheduleDate?.DateTime
+            CategoryId = CourseToEdit.CategoryId
         };
-
-        if (CourseToEdit.ScheduleDate != null)
-        {
-            var dt = CourseToEdit.ScheduleDate.Value.DateTime;
-            dt = DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
-
-            _selectedDate = dt.Date;
-            _selectedTime = dt.TimeOfDay;
-        }
-        else
-        {
-            _selectedDate = DateTime.Today;
-            _selectedTime = new TimeSpan(9, 0, 0);
-        }
 
         _imagePreview = CourseToEdit.ImageUrl;
     }
@@ -123,55 +106,21 @@
         _selectedFile = e.File;
     }
 
-    private void OnDateChanged(DateTime? newDate)
-    {
-        _selectedDate = newDate;
-    }
-
-    private void OnTimeChanged(TimeSpan? newTime)
-    {
-        if (newTime.HasValue)
-            _selectedTime = newTime.Value;
-    }
-
-
     private async Task SubmitAsync()
     {
-        await _form.Validate();
+        // Pastikan form valid
+        await _form!.Validate();
         if (!_isFormValid)
         {
             Snackbar.Add("Periksa kembali form Anda.", Severity.Warning);
             return;
         }
 
-        if (_selectedDate.HasValue)
-        {
-            var combined = new DateTimeOffset(
-            _selectedDate.Value.Year,
-            _selectedDate.Value.Month,
-            _selectedDate.Value.Day,
-            _selectedTime.Hours,
-            _selectedTime.Minutes,
-            0,
-            TimeSpan.FromHours(7) // WIB (+07:00)
-            );
-
-            _editCourse.ScheduleDate = combined;
-        }
-
-        Console.WriteLine($"DEBUG SEND: {_editCourse.ScheduleDate}");
-
-        var updated = await CourseService.UpdateCourseAsync(
-        CourseToEdit.Id,
-        _editCourse,
-        _selectedFile,
-        CourseToEdit.ScheduleId,
-        CourseToEdit.ScheduleAssignmentId
-        );
+        var updated = await CourseService.UpdateCourseAsync(CourseToEdit.Id, _editCourse, _selectedFile);
 
         if (updated)
         {
-            Snackbar.Add("Perubahan berhasil disimpan.", Severity.Success);
+            Snackbar.Add("✅ Perubahan course berhasil disimpan.", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         else
@@ -179,5 +128,4 @@
             Snackbar.Add("Gagal menyimpan perubahan course.", Severity.Error);
         }
     }
-
 }

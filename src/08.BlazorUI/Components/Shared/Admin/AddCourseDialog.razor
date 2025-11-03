@@ -28,16 +28,6 @@
                 }
             </MudSelect>
 
-            <MudDatePicker Label="Tanggal Jadwal" Date="@_selectedDate" DateChanged="OnDateChanged" Required="true"
-                MinDate="@DateTime.Today" />
-
-            <MudTimePicker Label="Waktu Jadwal" Time="_selectedTime"
-                TimeChanged="EventCallback.Factory.Create<TimeSpan?>(this, OnTimeChanged)" AmPm="false"
-                MinuteInterval="5" />
-
-            <MudNumericField T="int" Label="Slot Tersedia" @bind-Value="_newCourse.AvailableSlot" Min="1"
-                Required="true" RequiredError="Slot wajib diisi" />
-
             <MudItem>
                 <MudText Typo="Typo.body2">Upload Gambar</MudText>
                 <InputFile OnChange="OnFileSelected" accept="image/*" />
@@ -51,9 +41,7 @@
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Color="Color.Secondary">
-            Batal
-        </MudButton>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Color="Color.Secondary">Batal</MudButton>
         <MudButton OnClick="SubmitAsync" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_isFormValid)">
             Simpan
         </MudButton>
@@ -69,41 +57,14 @@
 
     private MudForm? _form;
     private bool _isFormValid;
-
-    private CreateCourseDto _newCourse = new()
-    {
-        ScheduleDate = DateTime.Today.AddHours(9)
-    };
-
+    private CreateCourseDto _newCourse = new();
     private IBrowserFile? _selectedFile;
 
-    private DateTime? _selectedDate = DateTime.Today;
-    private TimeSpan _selectedTime = new(9, 0, 0);
-
-
-    private DateTime CreateLocalDateTime(DateTime date, TimeSpan time)
-    {
-        return DateTime.SpecifyKind(
-        new DateTime(date.Year, date.Month, date.Day, time.Hours, time.Minutes, 0),
-        DateTimeKind.Unspecified
-        );
-    }
     private void Cancel() => MudDialog.Cancel();
 
     private void OnFileSelected(InputFileChangeEventArgs e)
     {
         _selectedFile = e.File;
-    }
-
-    private void OnDateChanged(DateTime? newDate)
-    {
-        _selectedDate = newDate;
-    }
-
-    private void OnTimeChanged(TimeSpan? newTime)
-    {
-        if (newTime.HasValue)
-            _selectedTime = newTime.Value;
     }
 
     private async Task SubmitAsync()
@@ -115,18 +76,11 @@
             return;
         }
 
-        if (_selectedDate.HasValue)
-        {
-            _newCourse.ScheduleDate = CreateLocalDateTime(_selectedDate.Value, _selectedTime);
-        }
-
-        Console.WriteLine($"DEBUG SEND: {_newCourse.ScheduleDate:o}");
-
         var result = await CourseService.AddCourseAsync(_newCourse, _selectedFile);
 
-        if (result)
+        if (result.HasValue && result.Value > 0)
         {
-            Snackbar.Add("Course berhasil ditambahkan.", Severity.Success);
+            Snackbar.Add("✅ Course berhasil ditambahkan.", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         else
@@ -134,4 +88,5 @@
             Snackbar.Add("Gagal menambahkan course.", Severity.Error);
         }
     }
+
 }

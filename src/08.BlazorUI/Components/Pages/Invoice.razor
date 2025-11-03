@@ -12,21 +12,22 @@
 @inject InvoiceService InvoiceService
 @inject ILocalStorageService LocalStorage
 
-
 <style>
-  /* Pastikan wrapper tinggi layar penuh */
+  /* --- Wrapper halaman penuh tinggi --- */
   .page-wrapper {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
   }
 
-  /* Area utama isi ruang tengah */
+  /* --- Area konten utama --- */
   .main-content {
     flex: 1;
+    overflow-x: auto;
+    /* ✅ supaya tabel bisa discroll di HP */
   }
 
-  /* Footer menempel di bawah */
+  /* --- Footer tetap di bawah --- */
   .footer {
     margin-top: auto;
     padding: 1rem;
@@ -39,7 +40,7 @@
     background-color: #5B4947;
   }
 
-  /* Row ganjil putih, genap abu-abu */
+  /* --- Baris ganjil genap --- */
   .odd-row {
     background-color: #ffffff;
   }
@@ -48,7 +49,7 @@
     background-color: #f5f5f5;
   }
 
-  /* Tombol details */
+  /* --- Tombol Details --- */
   .details-btn {
     background-color: #FABC1D !important;
     color: black !important;
@@ -58,13 +59,33 @@
     text-decoration: none !important;
   }
 
-  /* Align cell */
+  /* --- Teks sel --- */
   .center-cell {
     text-align: center;
   }
 
   .left-cell {
     text-align: left;
+  }
+
+  /* ✅ Responsif tabel */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
+
+  /* ✅ Pastikan tabel tidak melewati lebar layar */
+  .responsive-table {
+    min-width: 700px;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  /* ✅ Atur agar teks tidak kepotong di layar kecil */
+  .responsive-table td,
+  .responsive-table th {
+    white-space: nowrap;
   }
 </style>
 
@@ -83,40 +104,44 @@
   }
   else
   {
-    <MudItem class="px-14 my-10 main-content">
+    <MudItem class="px-6 py-6 main-content">
       <MudText Typo="Typo.h6" Style="color:#4F4F4F; font-weight:600">Menu Invoice</MudText>
 
-      <MudTable Class="mx-14 mt-4" T="InvoiceItem" Items="@invoices" Hover="true" Breakpoint="Breakpoint.Sm"
-        RowClassFunc="@RowClassFunc">
-        <HeaderContent>
-          <MudTh Class="custom-header left-cell" style="color:white">No.</MudTh>
-          <MudTh Class="custom-header center-cell" style="color:white">No. Invoice</MudTh>
-          <MudTh Class="custom-header center-cell" style="color:white">Date</MudTh>
-          <MudTh Class="custom-header center-cell" style="color:white">Total Course</MudTh>
-          <MudTh Class="custom-header center-cell" style="color:white">Total Price</MudTh>
-          <MudTh Class="custom-header center-cell" style="color:white">Action</MudTh>
-        </HeaderContent>
+      <!-- ✅ Bungkus tabel dalam container responsif -->
+      <div class="table-container mt-4">
+        <MudTable Class="responsive-table" T="InvoiceItem" Items="@invoices" Hover="true" Breakpoint="Breakpoint.Sm"
+          RowClassFunc="@RowClassFunc">
 
-        <RowTemplate>
-          <MudTd Class="left-cell" DataLabel="No.">@(invoices.IndexOf(context) + 1)</MudTd>
-          <MudTd Class="center-cell" DataLabel="No. Invoice">@context.NoInvoice</MudTd>
-          <MudTd Class="center-cell" DataLabel="Date">
-            @context.Date.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("en-US"))
-          </MudTd>
-          <MudTd Class="center-cell" DataLabel="Total Course">@context.TotalCourse</MudTd>
-          <MudTd Class="center-cell" DataLabel="Total Price">IDR @context.TotalPrice.ToString("N0")</MudTd>
-          <MudTd Class="center-cell">
-            <MudButton Class="rounded-lg details-btn" Variant="Variant.Filled" Size="Size.Small" DropShadow="false"
-              OnClick="@(() => ShowDetails(context))">
-              Details
-            </MudButton>
-          </MudTd>
-        </RowTemplate>
+          <HeaderContent>
+            <MudTh Class="custom-header left-cell" style="color:white">No.</MudTh>
+            <MudTh Class="custom-header center-cell" style="color:white">No. Invoice</MudTh>
+            <MudTh Class="custom-header center-cell" style="color:white">Date</MudTh>
+            <MudTh Class="custom-header center-cell" style="color:white">Total Course</MudTh>
+            <MudTh Class="custom-header center-cell" style="color:white">Total Price</MudTh>
+            <MudTh Class="custom-header center-cell" style="color:white">Action</MudTh>
+          </HeaderContent>
 
-        <NoRecordsContent>
-          <MudText Class="m-3">No invoice found.</MudText>
-        </NoRecordsContent>
-      </MudTable>
+          <RowTemplate>
+            <MudTd Class="left-cell" DataLabel="No.">@(invoices.IndexOf(context) + 1)</MudTd>
+            <MudTd Class="center-cell" DataLabel="No. Invoice">@context.NoInvoice</MudTd>
+            <MudTd Class="center-cell" DataLabel="Date">
+              @context.Date.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("en-US"))
+            </MudTd>
+            <MudTd Class="center-cell" DataLabel="Total Course">@context.TotalCourse</MudTd>
+            <MudTd Class="center-cell" DataLabel="Total Price">IDR @context.TotalPrice.ToString("N0")</MudTd>
+            <MudTd Class="center-cell">
+              <MudButton Class="rounded-lg details-btn" Variant="Variant.Filled" Size="Size.Small" DropShadow="false"
+                OnClick="@(() => ShowDetails(context))">
+                Details
+              </MudButton>
+            </MudTd>
+          </RowTemplate>
+
+          <NoRecordsContent>
+            <MudText Class="m-3">No invoice found.</MudText>
+          </NoRecordsContent>
+        </MudTable>
+      </div>
     </MudItem>
   }
 </MudContainer>
@@ -151,7 +176,6 @@
         Navigation.NavigateTo("/", forceLoad: true);
       }
 
-      // 2️⃣ Coba baca token dari LocalStorage
       string? token = null;
       try
       {
@@ -162,30 +186,22 @@
         Console.WriteLine("⚠️ LocalStorage belum siap atau tidak tersedia: " + ex.Message);
       }
 
-      // 3️⃣ Kalau token ada, ambil data invoice
       if (!string.IsNullOrWhiteSpace(token))
       {
-        Console.WriteLine("🔑 Token ditemukan, ambil data invoice...");
-
         invoices = (await InvoiceService.GetInvoicesUserAsync(token))
         .OrderByDescending(i => i.NoInvoice)
         .ToList();
 
         totalInvoices = invoices?.Count ?? 0;
-        Console.WriteLine($"📦 Jumlah invoice diterima: {totalInvoices}");
-
-        foreach (var inv in invoices)
-          inv.Email ??= "(no email)";
       }
       else
       {
         invoices.Clear();
         totalInvoices = 0;
-        Console.WriteLine("🚫 Token tidak tersedia: skip memuat invoice.");
       }
 
       _loaded = true;
-      StateHasChanged(); // ⬅️ Pastikan UI refresh setelah data terload
+      StateHasChanged();
     }
     catch (Exception ex)
     {
@@ -198,13 +214,11 @@
     }
   }
 
-
   private List<BreadcrumbItem> _items =
   [
   new("Home", href: "/"),
 new("Invoice", href: null, disabled: true)
   ];
-
 
   private string RowClassFunc(InvoiceItem invoice, int rowNumber)
   {
@@ -213,7 +227,6 @@ new("Invoice", href: null, disabled: true)
 
   private void ShowDetails(InvoiceItem invoice)
   {
-    Console.WriteLine($"Details invoice: {invoice.NoInvoice} pada {invoice.Date:dd/MM/yyyy}");
     Navigation.NavigateTo($"/invoice/detail/{invoice.InvoiceId}", forceLoad: true);
   }
 }

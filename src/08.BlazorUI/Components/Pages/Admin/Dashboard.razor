@@ -13,6 +13,9 @@
 
 @inject IAuthService AuthService
 
+@inject PaymentService PaymentService
+
+@using MyApp.BlazorUI.Components.Models
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -36,14 +39,15 @@
     <MudItem xs="12" sm="4">
       <MudCard Class="card" Style="background-color: #3b82f6; color: white;">
         <MudCardHeader Class="d-flex justify-center align-center gap-2 py-2">
-          <MudIcon Icon="@Icons.Material.Filled.Payments" />
-          <MudText Typo="Typo.body2">Total Payment</MudText>
+          <MudIcon Icon="@Icons.Material.Filled.CreditCard" />
+          <MudText Typo="Typo.body2">Active Payment Methods</MudText>
         </MudCardHeader>
         <MudCardContent Class="py-1">
-          <MudText Typo="Typo.h3" Class="text-center">@totalInvoices</MudText>
+          <MudText Typo="Typo.h3" Class="text-center">@totalPaymentMethods</MudText>
         </MudCardContent>
       </MudCard>
     </MudItem>
+
 
     <MudItem xs="12" sm="4">
       <MudCard Class="card" Style="background-color: #9333ea; color: white;">
@@ -101,6 +105,8 @@
   private int totalUsersActive;
   private int totalMembers;
   private int totalInvoices;
+
+  private int totalPaymentMethods;
   private List<InvoiceItem> invoices = new();
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -115,6 +121,10 @@
       // 1️⃣ Ambil data public dashboard (tanpa token)
       totalUsersActive = await DashboardService.GetTotalActiveUsersAsync();
       totalMembers = await DashboardService.GetTotalMembersAsync();
+
+      var paymentMethods = await PaymentService.GetPaymentsAsync();
+      totalPaymentMethods = paymentMethods?.Count(pm => pm.Status == PaymentStatus.Active) ?? 0;
+      Console.WriteLine($"💳 Total active payment methods: {totalPaymentMethods}");
 
       // 2️⃣ Coba baca token dari LocalStorage
       string? token = null;

@@ -9,51 +9,60 @@
 
 <PageTitle>User Management</PageTitle>
 
-<MudPaper Elevation="1" Style="padding: 1rem; height: calc(100vh - 8rem); display:flex; flex-direction:column;">
-  <MudText Typo="Typo.h4" Class="mb-4">User Management</MudText>
+<MudPaper Elevation="1" Class="user-container">
+  <div class="header-section">
+    <MudText Typo="Typo.h5" Class="title">User Management</MudText>
+    <MudButton OnClick="OpenAddUserDialog" Variant="Variant.Filled" Color="Color.Success"
+      StartIcon="@Icons.Material.Filled.Add">
+      Add User
+    </MudButton>
+  </div>
 
-  <MudButton OnClick="OpenAddUserDialog" Variant="Variant.Filled" Class="rounded-lg btn-add mb-3" Style="width:150px;">
-    Add User
-  </MudButton>
-
-  <div style="flex:1; overflow-y:auto;">
+  <div class="table-wrapper">
     <MudTable Items="@Users" FixedHeader="true" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading"
-      LoadingProgressColor="Color.Info" Class="mt-2" Elevation="0" RowsPerPage="5">
+      LoadingProgressColor="Color.Info" Dense="true" Class="user-table rounded-lg shadow-sm border" RowsPerPage="5">
+
       <HeaderContent>
-        <MudTh Class="t">Email</MudTh>
-        <MudTh Class="t">Name</MudTh>
-        <MudTh Class="t">Role</MudTh>
-        <MudTh Class="t">Status</MudTh>
-        <MudTh Class="t">Action</MudTh>
+        <MudTh>Email</MudTh>
+        <MudTh>Nama</MudTh>
+        <MudTh>Role</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Aksi</MudTh>
       </HeaderContent>
+
       <RowTemplate>
-        <MudTd Class="t">@context.Email</MudTd>
-        <MudTd Class="t">@context.Name</MudTd>
-        <MudTd Class="t">@context.Role</MudTd>
-        <MudTd Class="t">
+        <MudTd DataLabel="Email">@context.Email</MudTd>
+        <MudTd DataLabel="Nama">@context.Name</MudTd>
+        <MudTd DataLabel="Role">@context.Role</MudTd>
+        <MudTd DataLabel="Status">
           @if (context.Status == UserStatus.Active)
           {
-            <MudChip T="UserStatus" Color="Color.Success" Variant="Variant.Filled">Active</MudChip>
+            <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">Active</MudChip>
           }
           else
           {
-            <MudChip T="UserStatus" Color="Color.Error" Variant="Variant.Filled">Inactive</MudChip>
+            <MudChip T="string" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">Inactive</MudChip>
           }
         </MudTd>
-        <MudTd Class="t">
-          <MudButton OnClick="@(() => OpenEditUserDialog(context))" Variant="Variant.Filled"
-            Class="rounded-lg btn-edit me-2">Edit</MudButton>
-          <MudButton OnClick="@(() => DeleteUserAsync(context))" Variant="Variant.Filled" Class="rounded-lg btn-delete">
-            Delete</MudButton>
+        <MudTd DataLabel="Aksi" Class="action-cell">
+          <MudTooltip Text="Edit User">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" Size="Size.Medium"
+              OnClick="@(() => OpenEditUserDialog(context))" />
+          </MudTooltip>
+
+          <MudTooltip Text="Hapus User">
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Medium"
+              OnClick="@(() => DeleteUserAsync(context))" />
+          </MudTooltip>
         </MudTd>
       </RowTemplate>
+
       <PagerContent>
-        <MudTablePager PageSizeOptions="new int[] { 5, 10, 25, 50, 100, int.MaxValue }" />
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 25, 50 }" />
       </PagerContent>
     </MudTable>
   </div>
 </MudPaper>
-
 
 @code {
   private bool _loading;
@@ -85,40 +94,23 @@
 
   private async Task OpenAddUserDialog()
   {
-    var options = new DialogOptions
-    {
-      CloseOnEscapeKey = true,
-      MaxWidth = MaxWidth.Medium,
-      FullWidth = true
-    };
+    var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+    var dialog = DialogService.Show<AddUserDialog>("Add User", options);
+    var result = await dialog.Result;
 
-    // Gunakan Show, bukan ShowAsync
-    var dialogReference = DialogService.Show<AddUserDialog>("Add User", options);
-
-    // Tunggu sampai dialog ditutup
-    var result = await dialogReference.Result;
-
-    // Jika Submit berhasil, result.Data = true
     if (result?.Data is true)
     {
-      Snackbar.Add("User berhasil ditambahkan!", Severity.Success);
-      await LoadUsersAsync(); // refresh table
+      Snackbar.Add("✅ User berhasil ditambahkan!", Severity.Success);
+      await LoadUsersAsync();
     }
   }
 
-
   private async Task OpenEditUserDialog(UserModel user)
   {
-    var options = new DialogOptions
-    {
-      CloseOnEscapeKey = true,
-      MaxWidth = MaxWidth.Medium,
-      FullWidth = true
-    };
-
+    var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
     var parameters = new DialogParameters { { "User", user } };
-    var dialogReference = DialogService.Show<EditUserDialog>("Edit User", parameters, options);
-    var result = await dialogReference.Result; // tunggu dialog selesai
+    var dialog = DialogService.Show<EditUserDialog>("Edit User", parameters, options);
+    var result = await dialog.Result;
 
     if (result?.Data is UserModel updatedUser)
     {
@@ -131,7 +123,7 @@
         existing.Status = updatedUser.Status;
       }
 
-      Snackbar.Add("User berhasil diupdate!", Severity.Success);
+      Snackbar.Add("✅ User berhasil diperbarui!", Severity.Success);
       StateHasChanged();
     }
   }
@@ -139,9 +131,9 @@
   private async Task DeleteUserAsync(UserModel user)
   {
     bool confirmed = await DialogService.ShowMessageBox(
-    "Confirm Delete",
-    $"Apakah kamu yakin ingin menghapus user {user.Name}?",
-    yesText: "Yes", noText: "Cancel") ?? false;
+    "Konfirmasi Hapus",
+    $"Apakah kamu yakin ingin menghapus user '{user.Name}'?",
+    yesText: "Ya", noText: "Batal") ?? false;
 
     if (!confirmed)
       return;
@@ -149,52 +141,80 @@
     var success = await UserService.DeleteUserAsync(user.Id);
     if (success)
     {
-      Snackbar.Add("User berhasil dihapus!", Severity.Success);
-      await LoadUsersAsync(); // refresh table
+      Snackbar.Add("🗑️ User berhasil dihapus!", Severity.Success);
+      await LoadUsersAsync();
     }
     else
     {
-      Snackbar.Add("Gagal menghapus user!", Severity.Error);
+      Snackbar.Add("❌ Gagal menghapus user!", Severity.Error);
     }
   }
 }
 
 <style>
-  .btn-add {
-    background-color: green;
-    text-transform: none;
-    color: white;
+  .user-container {
+    padding: 1.5rem;
+    background-color: #fff;
+    height: calc(100vh - 5rem);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-sizing: border-box;
   }
 
-  .btn-add:hover {
-    background-color: #0f7a0f;
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
   }
 
-  .btn-edit {
-    background-color: #fabc1d;
-    text-transform: none;
-    color: white;
+  .title {
+    font-weight: 600;
   }
 
-  .btn-edit:hover {
-    background-color: #f1b60d;
+  .table-wrapper {
+    flex: 1;
+    overflow-x: auto;
   }
 
-  .btn-delete {
-    background-color: red;
-    text-transform: none;
-    color: white;
+  .user-table {
+    width: 100%;
+    min-width: 700px;
   }
 
-  .btn-delete:hover {
-    background-color: darkred;
+  .action-cell {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
   }
 
   .mud-table-head th {
     background-color: #dbffdd !important;
+    text-align: center;
   }
 
-  .t {
+  .mud-table-cell {
     text-align: center;
+    vertical-align: middle !important;
+  }
+
+  /* RESPONSIVE */
+  @@media (max-width: 768px) {
+    .header-section {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .user-table {
+      min-width: 100%;
+    }
+
+    .action-cell {
+      flex-direction: row;
+      justify-content: flex-start;
+    }
   }
 </style>
