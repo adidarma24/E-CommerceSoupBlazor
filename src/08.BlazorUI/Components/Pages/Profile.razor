@@ -7,36 +7,57 @@
 
 @attribute [Authorize]
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
-  <MudText Typo="Typo.h4" GutterBottom="true">Profil Saya</MudText>
-
+<MudContainer MaxWidth="MaxWidth.Medium" Class="profile-page-container">
   @if (_isLoading)
   {
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    <div class="loading-container">
+      <MudProgressCircular Color="Color.Primary" Indeterminate="true" Diameter="100" />
+      <MudText Typo="Typo.subtitle1" Class="mt-4">Memuat data profil...</MudText>
+    </div>
   }
   else if (_profile != null)
   {
-    <MudCard>
-      <MudCardContent>
-        <MudTextField @bind-Value="_profile.Username" Label="Username" ReadOnly="true" Variant="Variant.Outlined" />
-        <MudTextField @bind-Value="_profile.Email" Label="Email" ReadOnly="true" Variant="Variant.Outlined"
-          Class="mt-3" />
-        <MudTextField @bind-Value="_profile.Role" Label="Role" ReadOnly="true" Variant="Variant.Outlined" Class="mt-3" />
-        <MudTextField @bind-Value="_profile.Status" Label="Status" ReadOnly="true" Variant="Variant.Outlined"
-          Class="mt-3" />
-      </MudCardContent>
-    </MudCard>
+    <MudPaper Class="profile-card fade-in" Elevation="4">
+      <MudText Typo="Typo.h5" Align="Align.Center" Class="font-semibold mb-2">
+        @_profile.Username
+      </MudText>
+      <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="mud-text-secondary mb-4">
+        @_profile.Email
+      </MudText>
+
+      <MudDivider Class="my-2" />
+
+      <MudGrid Class="mt-3">
+        <MudItem xs="12" sm="6">
+          <MudText Typo="Typo.subtitle2" Class="label">
+            <MudIcon Icon="@Icons.Material.Filled.Badge" Class="me-1" /> Role
+          </MudText>
+          <MudText Typo="Typo.body1">@(_profile.Role)</MudText>
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+          <MudText Typo="Typo.subtitle2" Class="label">
+            <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Class="me-1" /> Status
+          </MudText>
+          <MudChip T="string" Color="@(_profile.Status == "Active" ? Color.Success : Color.Error)"
+            Variant="Variant.Filled" Class="mt-1 fw-semibold">
+            @_profile.Status
+          </MudChip>
+        </MudItem>
+      </MudGrid>
+    </MudPaper>
   }
   else
   {
-    <MudText Color="Color.Error">Gagal memuat profil.</MudText>
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Elevation="1">
+      Gagal memuat data profil.
+    </MudAlert>
   }
 </MudContainer>
 
 @code {
   private UserProfileDto? _profile;
   private bool _isLoading = true;
-
   protected override async Task OnInitializedAsync()
   {
     try
@@ -45,7 +66,7 @@
     }
     catch (Exception ex)
     {
-      Snackbar.Add($"Gagal memuat data: {ex.Message}", Severity.Error);
+      Snackbar.Add($"Gagal memuat data: {ex.Message}", Severity.Error, cfg => cfg.RequireInteraction = false);
     }
     finally
     {
@@ -53,3 +74,73 @@
     }
   }
 }
+
+
+<style>
+  .profile-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8fafc, #e9edf3);
+  }
+
+  .loading-container {
+    text-align: center;
+    padding-top: 10vh;
+  }
+
+  .profile-card {
+    background-color: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .profile-card.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .label {
+    color: #6b7280;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+  }
+
+  .me-1 {
+    margin-right: 0.5rem;
+  }
+
+  .mt-1 {
+    margin-top: 0.25rem;
+  }
+
+  .mt-4 {
+    margin-top: 1rem;
+  }
+
+  .mb-2 {
+    margin-bottom: 0.5rem;
+  }
+
+  .mb-4 {
+    margin-bottom: 1.5rem;
+  }
+
+  .my-2 {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .fw-semibold {
+    font-weight: 600;
+  }
+</style>
