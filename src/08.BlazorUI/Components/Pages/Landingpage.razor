@@ -12,11 +12,11 @@
 
 @* Hero Section  *@
 <MudPaper Class="hero-section" Square="true">
-  <MudContainer>
-    <MudText Typo="Typo.h4" Class="hero-title">
+  <MudContainer Class="hero-container">
+    <MudText Typo="Typo.h4" Class="hero-title fade-in-slide-up">
       Be the next great chef
     </MudText>
-    <MudText Typo="Typo.h6" Class="hero-subtitle">
+    <MudText Typo="Typo.h6" Class="hero-subtitle fade-in-slide-up-delay">
       We are able to awaken your cooking skills to become a classy chef
       and ready to dive into the professional world
     </MudText>
@@ -29,7 +29,7 @@
     @foreach (StatItem stat in stats)
     {
       <MudItem xs="12" sm="6" md="4">
-        <MudCard Class="stat-card h-100">
+        <MudCard Class="stat-card h-100 fade-in-scale">
           <MudCardContent Class="stat-card-content">
             <MudText Typo="Typo.h4" Color="Color.Warning" Class="font-weight-bold">@stat.Number</MudText>
             <MudText Typo="Typo.body2">@stat.Description</MudText>
@@ -42,14 +42,14 @@
 
 @* More Professional Class Section *@
 <MudContainer Class="my-8">
-  <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-10 title-text">
+  <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-10 title-text fade-in-slide-down">
     More Professional Classes
   </MudText>
 
   @if (!Foods.Any())
   {
     <MudGrid Justify="Justify.Center">
-      <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+      <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="bounce-in" />
     </MudGrid>
   }
   else
@@ -58,7 +58,7 @@
       @foreach (FoodItem item in Foods.Skip((currentPage - 1) * pageSize).Take(pageSize))
       {
         <MudItem xs="12" sm="6" md="4">
-          <MudCard Elevation="1" @onclick="() => OnCardClick(item)" Class="card-hover my-card-style">
+          <MudCard Elevation="1" @onclick="() => OnCardClick(item)" Class="card-hover my-card-style fade-in-stagger">
             <MudCardMedia Image="@item.Image" Height="250" Alt="@item.Title"
               Style="object-fit: cover; object-position: center;" />
             <MudCardContent>
@@ -74,15 +74,14 @@
 
     <MudGrid Justify="Justify.Center" Class="mt-8">
       <MudPagination Count="(int)Math.Ceiling((double)totalItems / pageSize)" @bind-Selected="currentPage"
-        Variant="Variant.Outlined" Color="Color.Warning" />
+        Variant="Variant.Outlined" Color="Color.Warning" Class="fade-in-slide-up-delay" />
     </MudGrid>
   }
 </MudContainer>
 
-
 @* Benefit Section *@
 <MudPaper Class="my-8 bg-benefit position-relative">
-  <MudContainer MaxWidth="MaxWidth.Large" Class="benefit-container">
+  <MudContainer MaxWidth="MaxWidth.Large" Class="benefit-container fade-in-slide-left">
     <MudText Typo="Typo.h2" Class="mb-2 text-white">Gets your best benefit</MudText>
     <MudText Typo="Typo.body1" Class="text-white">
       Our curriculum is designed to take you from enthusiast to expert.
@@ -96,16 +95,15 @@
 
 @* Food Type Section *@
 <MudContainer Class="food-container">
-  <MudText Typo="Typo.h5" Align="Align.Center" Class="title-text">
+  <MudText Typo="Typo.h5" Align="Align.Center" Class="title-text fade-in-slide-down">
     More food type as you can choose
   </MudText>
-
 
   @* Foot Card *@
   @if (!FoodTypes.Any())
   {
     <MudGrid Justify="Justify.Center">
-      <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+      <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="bounce-in" />
     </MudGrid>
   }
   else
@@ -114,7 +112,7 @@
       @foreach (FoodType food in FoodTypes.Skip((categoryCurrentPage - 1) * categoryPageSize).Take(categoryPageSize))
       {
         <MudItem xs="12" sm="6" md="4" lg="3">
-          <MudCard Elevation="1" @onclick="() => OnCategoryClick(food)" Class="card-hover food-type-card">
+          <MudCard Elevation="1" @onclick="() => OnCategoryClick(food)" Class="card-hover food-type-card fade-in-stagger">
             <MudCardMedia Image="@food.Image" Alt="@food.Name" Height="150" />
             <MudCardContent>
               <MudText Typo="Typo.body1" Align="Align.Center" Class="food-type-title">
@@ -127,7 +125,8 @@
     </MudGrid>
     <MudGrid Justify="Justify.Center" Class="mt-8">
       <MudPagination Count="(int)Math.Ceiling((double)categoryTotalItems / categoryPageSize)"
-        @bind-Selected="categoryCurrentPage" Variant="Variant.Outlined" Color="Color.Warning" />
+        @bind-Selected="categoryCurrentPage" Variant="Variant.Outlined" Color="Color.Warning"
+        Class="fade-in-slide-up-delay" />
     </MudGrid>
   }
 </MudContainer>
@@ -206,6 +205,16 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
       Console.WriteLine($"Failed to fetch data: {ex.Message}");
     }
   }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      // Trigger animations after initial render
+      await Task.Delay(100); // Small delay for DOM readiness
+      StateHasChanged(); // Re-render to apply animation classes
+    }
+  }
 }
 
 <style>
@@ -218,6 +227,10 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
     align-items: center;
     justify-content: center;
     text-align: center;
+  }
+
+  .hero-container {
+    animation: fadeInUp 1s ease-out;
   }
 
   .hero-title {
@@ -292,7 +305,6 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
 
   .food-grid {
     justify-content: center;
-    [cite_start]
     /* ✅ PERBAIKAN: Padding horizontal (kiri/kanan) dihapus  */
     /* Biarkan MudContainer yang mengatur padding responsif */
   }
@@ -326,8 +338,6 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
     height: 100%;
   }
 
-  [cite_start]
-
   /* ✅ PERBAIKAN: Style dipindahkan dari inline ke class CSS  */
   .food-type-card {
     height: 100%;
@@ -338,5 +348,114 @@ new StatItem(Number: "30+", Description: "Cooperate with trusted and upscale res
     font-weight: 500;
     padding: 0;
     margin-top: 0;
+  }
+
+  /* Animations */
+  @@keyframes fadeInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in-slide-up {
+    animation: fadeInUp 1s ease-out;
+  }
+
+  .fade-in-slide-up-delay {
+    animation: fadeInUp 1s ease-out 0.3s both;
+  }
+
+  .fade-in-slide-down {
+    animation: fadeInDown 1s ease-out 0.5s both;
+  }
+
+  @@keyframes fadeInDown {
+    0% {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in-scale {
+    animation: fadeInScale 0.8s ease-out 0.7s both;
+  }
+
+  @@keyframes fadeInScale {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .fade-in-stagger {
+    animation: fadeInStagger 0.6s ease-out both;
+  }
+
+  @@keyframes fadeInStagger {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in-slide-left {
+    animation: fadeInLeft 1s ease-out 0.9s both;
+  }
+
+  @@keyframes fadeInLeft {
+    0% {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .bounce-in {
+    animation: bounceIn 1s ease-in-out;
+  }
+
+  @@keyframes bounceIn {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+
+    50% {
+      transform: scale(1.05);
+    }
+
+    70% {
+      transform: scale(0.9);
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 </style>

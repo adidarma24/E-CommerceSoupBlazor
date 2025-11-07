@@ -11,36 +11,36 @@
   @if (_isLoading)
   {
     <div class="loading-container">
-      <MudProgressCircular Color="Color.Primary" Indeterminate="true" Diameter="100" />
-      <MudText Typo="Typo.subtitle1" Class="mt-4">Memuat data profil...</MudText>
+      <MudProgressCircular Color="Color.Primary" Indeterminate="true" Diameter="100" Class="bounce-in" />
+      <MudText Typo="Typo.subtitle1" Class="mt-4 fade-in-text">Memuat data profil...</MudText>
     </div>
   }
   else if (_profile != null)
   {
-    <MudPaper Class="profile-card fade-in" Elevation="4">
-      <MudText Typo="Typo.h5" Align="Align.Center" Class="font-semibold mb-2">
+    <MudPaper Class="@($"profile-card {_animateClass}")" Elevation="4">
+      <MudText Typo="Typo.h5" Align="Align.Center" Class="font-semibold mb-2 slide-in-from-top">
         @_profile.Username
       </MudText>
-      <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="mud-text-secondary mb-4">
+      <MudText Typo="Typo.subtitle2" Align="Align.Center" Class="mud-text-secondary mb-4 slide-in-from-top-delay">
         @_profile.Email
       </MudText>
 
-      <MudDivider Class="my-2" />
+      <MudDivider Class="my-2 slide-in-from-left" />
 
       <MudGrid Class="mt-3">
-        <MudItem xs="12" sm="6">
+        <MudItem xs="12" sm="6" Class="slide-in-from-left-delay">
           <MudText Typo="Typo.subtitle2" Class="label">
-            <MudIcon Icon="@Icons.Material.Filled.Badge" Class="me-1" /> Role
+            <MudIcon Icon="@Icons.Material.Filled.Badge" Class="me-1 icon-bounce" /> Role
           </MudText>
           <MudText Typo="Typo.body1">@(_profile.Role)</MudText>
         </MudItem>
 
-        <MudItem xs="12" sm="6">
+        <MudItem xs="12" sm="6" Class="slide-in-from-right-delay">
           <MudText Typo="Typo.subtitle2" Class="label">
-            <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Class="me-1" /> Status
+            <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Class="me-1 icon-bounce-delay" /> Status
           </MudText>
           <MudChip T="string" Color="@(_profile.Status == "Active" ? Color.Success : Color.Error)"
-            Variant="Variant.Filled" Class="mt-1 fw-semibold">
+            Variant="Variant.Filled" Class="mt-1 fw-semibold chip-scale">
             @_profile.Status
           </MudChip>
         </MudItem>
@@ -49,7 +49,7 @@
   }
   else
   {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Elevation="1">
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Elevation="1" Class="alert-shake">
       Gagal memuat data profil.
     </MudAlert>
   }
@@ -58,6 +58,8 @@
 @code {
   private UserProfileDto? _profile;
   private bool _isLoading = true;
+  private string _animateClass = "";
+
   protected override async Task OnInitializedAsync()
   {
     try
@@ -71,10 +73,21 @@
     finally
     {
       _isLoading = false;
+      StateHasChanged(); // Ensure re-render after loading
+    }
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender && !_isLoading && _profile != null)
+    {
+      // Trigger animation after the component has rendered
+      await Task.Delay(100); // Small delay to ensure DOM is ready
+      _animateClass = "fade-in";
+      StateHasChanged();
     }
   }
 }
-
 
 <style>
   .profile-page-container {
@@ -99,13 +112,13 @@
     max-width: 500px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     opacity: 0;
-    transform: translateY(15px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateY(15px) scale(0.95);
+    transition: opacity 0.8s ease, transform 0.8s ease;
   }
 
   .profile-card.fade-in {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 
   .label {
@@ -142,5 +155,176 @@
 
   .fw-semibold {
     font-weight: 600;
+  }
+
+  /* Loading animations */
+  .bounce-in {
+    animation: bounceIn 1s ease-in-out;
+  }
+
+  @@keyframes bounceIn {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+
+    50% {
+      transform: scale(1.05);
+    }
+
+    70% {
+      transform: scale(0.9);
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .fade-in-text {
+    animation: fadeInText 1.5s ease-in-out;
+  }
+
+  @@keyframes fadeInText {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Profile card animations */
+  .slide-in-from-top {
+    animation: slideInFromTop 0.8s ease-out 0.2s both;
+  }
+
+  .slide-in-from-top-delay {
+    animation: slideInFromTop 0.8s ease-out 0.4s both;
+  }
+
+  .slide-in-from-left {
+    animation: slideInFromLeft 0.8s ease-out 0.6s both;
+  }
+
+  .slide-in-from-left-delay {
+    animation: slideInFromLeft 0.8s ease-out 0.8s both;
+  }
+
+  .slide-in-from-right-delay {
+    animation: slideInFromRight 0.8s ease-out 1s both;
+  }
+
+  @@keyframes slideInFromTop {
+    0% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @@keyframes slideInFromLeft {
+    0% {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @@keyframes slideInFromRight {
+    0% {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Icon animations */
+  .icon-bounce {
+    animation: iconBounce 1s ease-in-out 1.2s both;
+  }
+
+  .icon-bounce-delay {
+    animation: iconBounce 1s ease-in-out 1.4s both;
+  }
+
+  @@keyframes iconBounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+      transform: translateY(0);
+    }
+
+    40% {
+      transform: translateY(-10px);
+    }
+
+    60% {
+      transform: translateY(-5px);
+    }
+  }
+
+  /* Chip animation */
+  .chip-scale {
+    animation: scaleIn 0.6s ease-out 1.6s both;
+  }
+
+  @@keyframes scaleIn {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Alert animation */
+  .alert-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @@keyframes shake {
+
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+      transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+      transform: translateX(5px);
+    }
   }
 </style>
