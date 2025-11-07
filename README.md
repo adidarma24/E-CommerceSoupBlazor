@@ -136,7 +136,7 @@ Jika error “exclusive lock for migration”, pastikan tidak ada proses `dotnet
 ## 👨‍💻 Tim Pengembang
 
 **Kelompok 4 – SOUP Project**
-Kontributor utama: [ZhenanSky](https://github.com/zhenansky), [AdiDharma] (https://github.com/adidarma24), [Dean] (https://github.com/Dean-Tr)
+Kontributor utama: [ZhenanSky](https://github.com/zhenansky). [AdiDharma] (https://github.com/adidarma24). [Dean] (https://github.com/Dean-Tr)
 
 ---
 
