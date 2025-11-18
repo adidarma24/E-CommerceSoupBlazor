@@ -1,17 +1,12 @@
-# 🍲 E-Commerce Soup Blazor
+# 🍲 Kelompok 4 – SOUP App
 
-A modern, scalable, and fully interactive E-Commerce Web Application built with Blazor, .NET, MudBlazor, Swagger, and integrated with clean architecture principles.
+Selamat datang di proyek **SOUP** 👋 — aplikasi modern berbasis **.NET Blazor** dan **ASP.NET Core Web API** yang dirancang untuk mempermudah pengelolaan menu, transaksi, dan data restoran.
 
-Proyek ini dirancang sebagai platform e-commerce sederhana namun powerful, dengan fitur lengkap mulai dari manajemen produk, keranjang belanja, hingga autentikasi pengguna.
 ---
 
-## 🚀 Tech Stack
+## 🚀 Tentang Proyek
 
-Frontend: Blazor, MudBlazor (UI Components)
-Backend: .NET, C#, Clean Architecture
-API Tools: Swagger (API Documentation), SonarQube (Code Quality)
-Database: SQL Server / PostgreSQL (opsional)
-Tools: Git, GitHub, Visual Studio / VS Code
+**SOUP** adalah sistem manajemen restoran yang dikembangkan oleh **Kelompok 4**. Aplikasi ini menggabungkan teknologi **frontend Blazor**, **backend Web API**, dan **Docker** untuk memberikan pengalaman cepat, aman, dan responsif.
 
 ### 🧩 Fitur Utama
 
@@ -60,7 +55,7 @@ dotnet ef database update  # jika menggunakan migrasi EF Core
 dotnet run
 ```
 
-➡️ Akses di: `http://localhost:5099/swagger/index.html` 
+➡️ Akses di: `http://localhost:5099/swagger/index.html`
 
 ### 🔹 Frontend (Blazor UI)
 
@@ -75,9 +70,21 @@ dotnet run
 
 ---
 
+## 🐋 Menjalankan Menggunakan Docker
+
+> Jalankan semua service (frontend + backend) dengan sekali perintah.
+
+```bash
+docker compose -f docker-compose.custom-domain.yml up --build
+```
+
+Setelah build selesai, buka browser di `http://localhost`.
+
+---
+
 ## ⚙️ Konfigurasi Environment
 
-Buat file `appsettings.Development.json` di src/06.WebAPI:
+Buat file `appsettings.Development.json` di root proyek:
 
 ```
 ConnectionStrings__DefaultConnection=Server=localhost;Database=soupdb;User Id=sa;Password=YourPassword;
@@ -96,6 +103,8 @@ dotnet ef database update
 Jika error “exclusive lock for migration”, pastikan tidak ada proses `dotnet` lain yang mengakses DB.
 
 ---
+
+## 👨‍💻 Tim Pengembang
 
 **Kelompok 4 – SOUP Project**
 Kontributor utama: [ZhenanSky](https://github.com/zhenansky). [AdiDharma](https://github.com/adidarma24). [Dean](https://github.com/Dean-Tr)
