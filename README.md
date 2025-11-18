@@ -18,6 +18,18 @@ Selamat datang di proyek **SOUP** 👋 — aplikasi modern berbasis **.NET Blazo
 
 ---
 
+## 🖼️ Preview Tampilan Website
+
+> Tempat untuk menampilkan screenshot atau foto tampilan UI website.
+>
+> **Contoh:** - Tampilan Dashboard - Halaman Login - Halaman Transaksi
+>
+> Silakan tambahkan gambar-gambar berikut format:
+
+    ![Judul Gambar](path/to/image.png)
+
+---
+
 ## 🗂️ Struktur Direktori
 
 ```
