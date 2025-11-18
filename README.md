@@ -1,12 +1,17 @@
-# 🍲 Kelompok 4 – SOUP App
+# 🍲 E-Commerce Soup Blazor
 
-Selamat datang di proyek **SOUP** 👋 — aplikasi modern berbasis **.NET Blazor** dan **ASP.NET Core Web API** yang dirancang untuk mempermudah pengelolaan menu, transaksi, dan data restoran.
+A modern, scalable, and fully interactive E-Commerce Web Application built with Blazor, .NET, MudBlazor, Swagger, and integrated with clean architecture principles.
 
+Proyek ini dirancang sebagai platform e-commerce sederhana namun powerful, dengan fitur lengkap mulai dari manajemen produk, keranjang belanja, hingga autentikasi pengguna.
 ---
 
-## 🚀 Tentang Proyek
+## 🚀 Tech Stack
 
-**SOUP** adalah sistem manajemen restoran yang dikembangkan oleh **Kelompok 4**. Aplikasi ini menggabungkan teknologi **frontend Blazor**, **backend Web API**, dan **Docker** untuk memberikan pengalaman cepat, aman, dan responsif.
+Frontend: Blazor, MudBlazor (UI Components)
+Backend: .NET, C#, Clean Architecture
+API Tools: Swagger (API Documentation), SonarQube (Code Quality)
+Database: SQL Server / PostgreSQL (opsional)
+Tools: Git, GitHub, Visual Studio / VS Code
 
 ### 🧩 Fitur Utama
 
@@ -55,7 +60,7 @@ dotnet ef database update  # jika menggunakan migrasi EF Core
 dotnet run
 ```
 
-➡️ Akses di: `https://localhost:5001` atau `http://localhost:5000`
+➡️ Akses di: `http://localhost:5099/swagger/index.html` 
 
 ### 🔹 Frontend (Blazor UI)
 
@@ -66,34 +71,17 @@ dotnet build
 dotnet run
 ```
 
-➡️ Akses di: `http://localhost:5099` atau `http://localhost:5099/swagger/index.html`
-
----
-
-## 🐋 Menjalankan Menggunakan Docker
-
-> Jalankan semua service (frontend + backend) dengan sekali perintah.
-
-```bash
-docker compose -f docker-compose.custom-domain.yml up --build
-```
-
-Setelah build selesai, buka browser di `http://localhost`.
+➡️ Akses di: `http://localhost:5099`
 
 ---
 
 ## ⚙️ Konfigurasi Environment
 
-Buat file `.env` di root proyek:
+Buat file `appsettings.Development.json` di src/06.WebAPI:
 
-```env
-ASPNETCORE_ENVIRONMENT=Development
-ASPNETCORE_URLS=http://+:80
-ConnectionStrings__DefaultConnection=Server=localhost;Database=soupdb;User Id=sa;Password=YourPassword;
-ApiBaseUrl=http://localhost:5000
 ```
-
-> 💡 **Tips:** Jangan commit file `.env` ke repository publik.
+ConnectionStrings__DefaultConnection=Server=localhost;Database=soupdb;User Id=sa;Password=YourPassword;
+```
 
 ---
 
@@ -109,34 +97,8 @@ Jika error “exclusive lock for migration”, pastikan tidak ada proses `dotnet
 
 ---
 
-## 💡 Tips & Solusi Cepat
-
-| Masalah                   | Solusi                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------- |
-| 🔒 _Migration lock_       | Tutup semua instance Visual Studio & jalankan ulang `dotnet ef database update` |
-| 🐳 _Dockerfile not found_ | Pastikan path `context` dan `dockerfile` di `docker-compose.yml` benar          |
-| ⚠️ _Blazor UI blank page_ | Cek `ApiBaseUrl` di `.env` sudah mengarah ke alamat Web API                     |
-
----
-
-## 👥 Cara Berkontribusi
-
-1. Fork repository ini 🍴
-2. Buat branch baru: `git checkout -b feature/nama-fitur`
-3. Lakukan perubahan & commit: `git commit -m "Tambah fitur X"`
-4. Push ke branch: `git push origin feature/nama-fitur`
-5. Buka Pull Request 🧩
-
----
-
-## 📅 Rencana Pengembangan
-
-- ***
-
-## 👨‍💻 Tim Pengembang
-
 **Kelompok 4 – SOUP Project**
-Kontributor utama: [ZhenanSky](https://github.com/zhenansky). [AdiDharma] (https://github.com/adidarma24). [Dean] (https://github.com/Dean-Tr)
+Kontributor utama: [ZhenanSky](https://github.com/zhenansky). [AdiDharma](https://github.com/adidarma24). [Dean](https://github.com/Dean-Tr)
 
 ---
 
