@@ -20,6 +20,8 @@ Selamat datang di proyek **SOUP** 👋 — aplikasi modern berbasis **.NET Blazo
 
 ## 🖼️ Preview Tampilan Website
 
+> Tampilan dalam bentuk Figma : [Figma]([https://github.com/adidarma24](https://www.figma.com/design/IctaGjUrcFTBRwRWTHjuNs/Soup--Copy-?node-id=0-1&p=f))
+> 
 > Tempat untuk menampilkan screenshot atau foto tampilan UI website.
 >
 > **Contoh:** - Tampilan Dashboard - Halaman Login - Halaman Transaksi
