@@ -18,9 +18,10 @@ Selamat datang di proyek **SOUP** 👋 — aplikasi modern berbasis **.NET Blazo
 
 ---
 
-## 🖼️ Preview Tampilan Website
+## 🖼️ Preview Tampilan Website & Dokumentation
 
 > Tampilan dalam bentuk Figma : [Figma](https://www.figma.com/design/IctaGjUrcFTBRwRWTHjuNs/Soup--Copy-?node-id=0-1&p=f)
+> > Tampilan dalam bentuk Document : .[Google Docs](https://docs.google.com/document/d/1A4ZaqRU-zx2ZFFZlFpLG1hl7O7eaqonL8lAAlx158EQ/edit?pli=1&tab=t.0)
 
 ---
 
